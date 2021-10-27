@@ -234,17 +234,3 @@ def check_license(license_info):
             log.warning("Invalid node_id")
             # raise Exception("Invalid license for device")
 #----------------------------------------------------------------------------------------------------------------------------------
-
-
-def export_device_info(filename, edge_id, environment_id):
-    device_info = get_device_info()
-    device_info["edge_id"] = edge_id
-    device_info["environment_id"] = environment_id
-
-    with open(filename, 'w') as fp:
-        json.dump(device_info, fp, default=str, ensure_ascii=False)
-#----------------------------------------------------------------------------------------------------------------------------------
-
-
-if __name__ == "__main__":
-    export_device_info("license.json", sys.argv[1], sys.argv[2])
