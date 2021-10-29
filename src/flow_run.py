@@ -64,7 +64,7 @@ class ImageSave():
     def __call__(self, frames):
         try:
             img_file = os.path.join(self._save_path, f"{self._flow_id}.jpg")
-            cv2.imwrite(img_file + "-tmp.jpg", np.array(frames))
+            cv2.imwrite(img_file + "-tmp.jpg", cv2.cvtColor(np.array(frames), cv2.COLOR_RGB2BGR))
             if os.path.isfile(img_file):
                 os.remove(img_file)
             os.rename(img_file + "-tmp.jpg", img_file)
