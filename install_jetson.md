@@ -120,6 +120,7 @@ sudo chown -R :users /opt/eyeflow
 
 ## Copy files to eyeflow directory
 ```
+sudo cp ./edge_run.sh /opt/eyeflow
 sudo cp ./src/* /opt/eyeflow/src
 ```
 
