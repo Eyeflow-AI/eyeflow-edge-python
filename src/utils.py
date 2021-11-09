@@ -67,6 +67,8 @@ def prepare_models(app_token, flow_data):
                         component_id = "6143a1edef5cc63fd4c177b0"
                     elif component_name == "class_cnn":
                         component_id = "614388073a692cccdab0e69b"
+                    elif component_name == "obj_location":
+                        component_id = "6178516681cbe716153175b0"
 
                 if not edge_client.get_model_component(
                     app_token,
