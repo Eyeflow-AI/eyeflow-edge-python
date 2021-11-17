@@ -217,6 +217,7 @@ class FlowRun():
             out_size = (out_frame[0] // size_w, out_frame[1] // size_h)
             draw_obj = flow_draw.FlowDraw(out_size)
 
+        key_event = False
         while True:
             try:
                 frames_cams = []
@@ -232,6 +233,10 @@ class FlowRun():
                         metadata["event_image"] = ""
                         metadata["event_scale"] = self._flow_data.get("event_image_scale", 1.0)
 
+                    if key_event:
+                        metadata["key_event"] = True
+                        key_event = False
+
                     frames_cams.append((cam["object"].get_frames(metadata, num_frames=num_frames), cam["outputs"]["0"]["nodes"]))
 
                 self.process_frames(frames_cams)
@@ -240,6 +245,7 @@ class FlowRun():
                     frames_draw = []
                     for frames in frames_cams:
                         frames_draw.append(draw_obj.draw_frames(frames[0]))
+                        # frames_draw.append(draw_obj.draw_frames(frames[0], preserve_resolution=True))
 
                     for frame in range(num_frames):
                         frs = np.stack([np.array(fr[frame]) for fr in frames_draw])
@@ -251,6 +257,9 @@ class FlowRun():
                         key_press = cv2.waitKey(1)
                         if key_press & 0xFF == ord('q'):
                             break
+
+                        if key_press & 0xFF == ord(' '):
+                            key_event = True
 
                 if key_press & 0xFF == ord('q'):
                     break

@@ -51,53 +51,35 @@ class FlowDraw(object):
 
         comp_lib = importlib.import_module(f'{prediction["component_id"]}.{prediction["component_name"]}')
 
-        if prediction.get("type") == "cutter":
+        if prediction.get("type") in ["cutter", "ocr"]:
             flag_draw_box = False
-            if "outputs" in prediction:
-                for out in prediction["outputs"]:
-                    for det in prediction["outputs"][out]:
-                        if "bbox" in det:
-                            det["bbox"]["x_min"] = int(det["bbox"]["x_min"] * self._img_scale_w)
-                            det["bbox"]["y_min"] = int(det["bbox"]["y_min"] * self._img_scale_h)
-                            det["bbox"]["x_max"] = int(det["bbox"]["x_max"] * self._img_scale_w)
-                            det["bbox"]["y_max"] = int(det["bbox"]["y_max"] * self._img_scale_h)
-                            flag_draw_box = True
+            for out in prediction["outputs"]:
+                for det in prediction["outputs"][out]:
+                    if "bbox" in det:
+                        det["bbox"]["x_min"] = int(det["bbox"]["x_min"] * self._img_scale_w)
+                        det["bbox"]["y_min"] = int(det["bbox"]["y_min"] * self._img_scale_h)
+                        det["bbox"]["x_max"] = int(det["bbox"]["x_max"] * self._img_scale_w)
+                        det["bbox"]["y_max"] = int(det["bbox"]["y_max"] * self._img_scale_h)
+                        flag_draw_box = True
 
-                            x_min = int(det["bbox"]["x_min"])
-                            y_min = int(det["bbox"]["y_min"])
+                        x_min = int(det["bbox"]["x_min"])
+                        y_min = int(det["bbox"]["y_min"])
 
-                        for key in det.keys():
-                            if key.startswith("component_"):
-                                self.draw_single_frame(
-                                    draw_obj,
-                                    (x_min, y_min),
-                                    det[key],
-                                    image
-                                )
-            else:
-                for out in prediction.keys():
-                    if not out.isdigit():
-                        continue
+                    if "bounds" in det:
+                        points = []
+                        for point in det["bounds"]:
+                            points.append([point[0] * self._img_scale_w, point[1] * self._img_scale_h])
+                        det["bounds"] = points
+                        flag_draw_box = True
 
-                    for det in prediction[out]:
-                        if "bbox" in det:
-                            det["bbox"]["x_min"] = int(det["bbox"]["x_min"] * self._img_scale_w)
-                            det["bbox"]["y_min"] = int(det["bbox"]["y_min"] * self._img_scale_h)
-                            det["bbox"]["x_max"] = int(det["bbox"]["x_max"] * self._img_scale_w)
-                            det["bbox"]["y_max"] = int(det["bbox"]["y_max"] * self._img_scale_h)
-                            flag_draw_box = True
-
-                            x_min = int(det["bbox"]["x_min"])
-                            y_min = int(det["bbox"]["y_min"])
-
-                        for key in det.keys():
-                            if key.startswith("component_"):
-                                self.draw_single_frame(
-                                    draw_obj,
-                                    (x_min, y_min),
-                                    det[key],
-                                    image
-                                )
+                    for key in det.keys():
+                        if key.startswith("component_"):
+                            self.draw_single_frame(
+                                draw_obj,
+                                (x_min, y_min),
+                                det[key],
+                                image
+                            )
 
             if flag_draw_box:
                 comp_lib.Component.draw_image(draw_obj, self._draw_font, offset_min, prediction, image)
