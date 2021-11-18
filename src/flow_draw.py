@@ -5,6 +5,7 @@ Class to draw flow annotations in a image
 Author: Alex Sobral de Freitas
 """
 
+import copy
 import traceback
 import importlib
 
@@ -49,6 +50,7 @@ class FlowDraw(object):
             log.warning(f"Incomplete data in prediction: {prediction}. Lacks component_id or component_name")
             return
 
+        prediction = copy.deepcopy(prediction)
         comp_lib = importlib.import_module(f'{prediction["component_id"]}.{prediction["component_name"]}')
 
         if prediction.get("type") in ["cutter", "ocr"]:
@@ -56,10 +58,10 @@ class FlowDraw(object):
             for out in prediction["outputs"]:
                 for det in prediction["outputs"][out]:
                     if "bbox" in det:
-                        det["bbox"]["x_min"] = int(det["bbox"]["x_min"] * self._img_scale_w)
-                        det["bbox"]["y_min"] = int(det["bbox"]["y_min"] * self._img_scale_h)
-                        det["bbox"]["x_max"] = int(det["bbox"]["x_max"] * self._img_scale_w)
-                        det["bbox"]["y_max"] = int(det["bbox"]["y_max"] * self._img_scale_h)
+                        det["bbox"]["x_min"] = int(det["bbox"]["x_min"] * self._img_scale)
+                        det["bbox"]["y_min"] = int(det["bbox"]["y_min"] * self._img_scale)
+                        det["bbox"]["x_max"] = int(det["bbox"]["x_max"] * self._img_scale)
+                        det["bbox"]["y_max"] = int(det["bbox"]["y_max"] * self._img_scale)
                         flag_draw_box = True
 
                         x_min = int(det["bbox"]["x_min"])
@@ -68,7 +70,7 @@ class FlowDraw(object):
                     if "bounds" in det:
                         points = []
                         for point in det["bounds"]:
-                            points.append([point[0] * self._img_scale_w, point[1] * self._img_scale_h])
+                            points.append([point[0] * self._img_scale, point[1] * self._img_scale])
                         det["bounds"] = points
                         flag_draw_box = True
 
@@ -105,12 +107,11 @@ class FlowDraw(object):
                 else:
                     frame_img = Image.fromarray(fr["input_image"])
                     if not preserve_resolution:
-                        self._img_scale_w = self._out_size[0] / frame_img.size[0]
-                        self._img_scale_h = self._out_size[1] / frame_img.size[1]
-                        frame_img = frame_img.resize(self._out_size, Image.ANTIALIAS)
+                        self._img_scale = min(self._out_size[0] / frame_img.size[0], self._out_size[1] / frame_img.size[1])
+                        out_size = (int(frame_img.size[0] * self._img_scale), int(frame_img.size[1] * self._img_scale))
+                        frame_img = frame_img.resize(out_size, Image.ANTIALIAS)
                     else:
-                        self._img_scale_w = 1
-                        self._img_scale_h = 1
+                        self._img_scale = 1
 
                 draw_obj = ImageDraw.Draw(frame_img)
                 display_txt = fr["output_data"]["camera_name"] + " - " + str(fr["frame_data"]["frame"])

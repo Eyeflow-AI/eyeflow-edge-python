@@ -10,8 +10,8 @@ import sys
 import traceback
 import datetime
 import math
+from pathlib import Path
 import copy
-import json
 import importlib
 import numpy as np
 import cv2
@@ -25,10 +25,14 @@ class VideoSave():
     Classe que recebe as imagens de um flow para salvar em um vídeo
     """
     def __init__(self, flow_id, out_frame=(1530, 1020)):
+        video_path = Path(CONFIG["file-service"]["video"]["local_folder"])
+        if not video_path.is_dir():
+            video_path.mkdir(parents=True, exist_ok=True)
+
         self._flow_id = flow_id
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         datetime_now = datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S")
-        intermediate_file = os.path.join(CONFIG["file-service"]["video"]["local_folder"], f"flow_run_proc-{datetime_now}.avi")
+        intermediate_file = os.path.join(video_path, f"flow_run_proc-{datetime_now}.avi")
         self._out_video = cv2.VideoWriter(intermediate_file, fourcc, 5, out_frame, True)
 
     def __call__(self, frames):
@@ -58,6 +62,10 @@ class ImageSave():
     Classe que recebe as imagens de um flow para salvar em uma pasta
     """
     def __init__(self, flow_id, save_path):
+        save_path = Path(save_path)
+        if not save_path.is_dir():
+            save_path.mkdir(parents=True, exist_ok=True)
+
         self._flow_id = flow_id
         self._save_path = save_path
 
@@ -155,13 +163,8 @@ class FlowRun():
                         for dest, out_comp in out_stack:
                             if dest == dest_id:
                                 updated = True
-                                for new_fr in output:
-                                    for fr in out_comp:
-                                        if new_fr["frame_data"]["camera_name"] == fr["frame_data"]["camera_name"] and new_fr["frame_data"]["frame"] == fr["frame_data"]["frame"]:
-                                            fr["frame_data"].update(new_fr["frame_data"])
-                                            break
-                                    else:
-                                        out_comp.append(new_fr)
+                                out_comp.extend(output)
+                                out_comp = sorted(out_comp, key=lambda det: det["frame_data"]["frame"])
 
                         if not updated:
                             out_stack.append((dest_id, output))
@@ -245,7 +248,6 @@ class FlowRun():
                     frames_draw = []
                     for frames in frames_cams:
                         frames_draw.append(draw_obj.draw_frames(frames[0]))
-                        # frames_draw.append(draw_obj.draw_frames(frames[0], preserve_resolution=True))
 
                     for frame in range(num_frames):
                         frs = np.stack([np.array(fr[frame]) for fr in frames_draw])
