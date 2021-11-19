@@ -250,7 +250,7 @@ class FlowRun():
                         frames_draw.append(draw_obj.draw_frames(frames[0]))
 
                     for frame in range(num_frames):
-                        frs = np.stack([np.array(fr[frame]) for fr in frames_draw])
+                        frs = [np.array(fr[frame]) for fr in frames_draw]
                         frs = img_utils.merge_images(frs).astype(np.uint8)
 
                         for out_obj in img_output:
