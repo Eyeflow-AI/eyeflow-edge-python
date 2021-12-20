@@ -4,6 +4,7 @@ docker run \
     --network host \
     --gpus all \
     --volume /opt/eyeflow/log:/opt/eyeflow/log \
+    --volume /opt/eyeflow/data:/opt/eyeflow/data \
     --volume /opt/eyeflow/src/edge.license:/opt/eyeflow/src/edge.license \
     --volume /opt/eyeflow/src/edge-key.pub:/opt/eyeflow/src/edge-key.pub \
     --name eyeflow_edge \

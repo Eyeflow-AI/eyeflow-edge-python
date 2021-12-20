@@ -6,7 +6,7 @@ import platform
 import importlib
 import socket
 import uuid
-import json
+# import json
 import jwt
 # from bson import ObjectId
 
@@ -192,6 +192,7 @@ def get_device_info():
         idx = plat_info.index("x86_64")
         device_arch = f"{plat_info[idx - 1]}-{plat_info[idx]}"
         device_sn = get_device_sn()
+    # 'WSL2-x86_64'
     else:
         raise Exception(f"Invalid device_architecture: {'-'.join(plat_info)}")
 
@@ -212,17 +213,18 @@ def get_device_info():
 
 def check_license(license_info):
     device_info = get_device_info()
-    if license_info.get("hostname"):
-        if device_info["hostname"] != license_info["hostname"]:
-            raise Exception("Invalid license for device")
+    print(device_info)
+    # if license_info.get("hostname"):
+    #     if device_info["hostname"] != license_info["hostname"]:
+    #         raise Exception("Invalid license for device")
 
-    if license_info.get("ip"):
-        if device_info["ip"] != license_info["ip"]:
-            raise Exception("Invalid license for device")
+    # if license_info.get("ip"):
+    #     if device_info["ip"] != license_info["ip"]:
+    #         raise Exception("Invalid license for device")
 
-    if license_info.get("device_architecture"):
-        if device_info["device_architecture"] != license_info["device_architecture"]:
-            raise Exception("Invalid license for device")
+    # if license_info.get("device_architecture"):
+    #     if device_info["device_architecture"] != license_info["device_architecture"]:
+    #         raise Exception("Invalid license for device")
 
     if license_info.get("device_sn"):
         if device_info["device_sn"] != license_info["device_sn"]:
@@ -231,8 +233,8 @@ def check_license(license_info):
             else:
                 raise Exception("Invalid license for device")
 
-    if license_info.get("node_id"):
-        if device_info["node_id"] != license_info["node_id"]:
-            log.warning("Invalid node_id")
+    # if license_info.get("node_id"):
+    #     if device_info["node_id"] != license_info["node_id"]:
+    #         log.warning("Invalid node_id")
             # raise Exception("Invalid license for device")
 #----------------------------------------------------------------------------------------------------------------------------------

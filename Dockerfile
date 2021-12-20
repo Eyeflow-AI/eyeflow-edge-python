@@ -37,7 +37,7 @@ RUN apt-get update -y \
       libeigen3-dev ffmpeg libxine2-dev libv4l-dev \
       gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools \
       libxvidcore-dev libx264-dev qt5-default libmp3lame-dev x264 v4l-utils \
-  && python3 -m pip install --upgrade pip==21.0.1 \
+  && python3 -m pip install --upgrade pip \
   && python3 -m pip install --upgrade --no-cache-dir --trusted-host pypi.python.org \
     wheel \
     setuptools \
@@ -110,4 +110,4 @@ ENV TF_FORCE_GPU_ALLOW_GROWTH='true'
 WORKDIR /opt/eyeflow/src
 COPY ./src .
 
-CMD [ "python3", "call_flow.py", "--monitor" ]
+CMD [ "python3", "call_flow.py" ]
