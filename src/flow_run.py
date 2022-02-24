@@ -94,6 +94,7 @@ class FlowRun():
 
         self._components = {}
         self._components["input"] = []
+        self._components["input_agregation"] = []
         self.load_components()
         self.load_models()
 
@@ -105,7 +106,7 @@ class FlowRun():
         for comp in self._flow_data["nodes"]:
             if not (self._video_test and comp["options"]["phase"] == 'input'):
                 try:
-                    log.info(f'Load Component: {comp["component_name"]} - Options: {comp["options"]}')
+                    log.info(f'Load Component: {comp["component_name"]}')
                     comp_lib = importlib.import_module(f'{comp["component_id"]}.{comp["component_name"]}')
                     comp["object"] = comp_lib.Component(comp)
                 except Exception as excp:
@@ -117,12 +118,15 @@ class FlowRun():
                 if not self._video_test:
                     comp["object"].setup_device()
 
+            if comp["options"]["phase"] == "input_agregation":
+                self._components["input_agregation"].append(comp)
+
             self._components[comp["_id"]] = copy.copy(comp)
 
 
     def load_models(self):
         for comp_id in self._components:
-            if comp_id != "input":
+            if comp_id not in ["input", "input_agregation"]:
                 comp = self._components[comp_id]
                 if comp["options"]["phase"] == "process":
                     if hasattr(comp["object"], "load_model"):
@@ -133,10 +137,26 @@ class FlowRun():
         proc_stack = list()
         out_stack = list()
 
+        if len(self._components["input_agregation"]):
+            for comp in self._components["input_agregation"]:
+                comp["object"].agregate_inputs(inputs)
+
         # Insert inputs in stack
-        for inp in inputs:
-            for out in inp[1]:
-                proc_stack.append((out, inp[0]))
+        del_list = []
+        for index, inp in enumerate(inputs):
+            for dest_id in inp[1]:
+                # concatenate/update outputs to a same destiny
+                for dest, out_comp in proc_stack:
+                    if dest == dest_id:
+                        out_comp.extend(inp[0])
+                        out_comp = sorted(out_comp, key=lambda det: det["frame_data"]["frame"])
+                        del_list.append(index)
+                        break
+                else:
+                    proc_stack.append((dest_id, inp[0]))
+
+        for index in reversed(del_list):
+            del inputs[index]
 
         # process phase
         while len(proc_stack) > 0:
@@ -159,16 +179,13 @@ class FlowRun():
 
                     if self._components[dest_id]["options"]["phase"] == "output" and len(output) > 0:
                         # concatenate/update outputs to a same destiny
-                        updated = False
                         for dest, out_comp in out_stack:
                             if dest == dest_id:
-                                updated = True
                                 out_comp.extend(output)
                                 out_comp = sorted(out_comp, key=lambda det: det["frame_data"]["frame"])
-
-                        if not updated:
+                                break
+                        else:
                             out_stack.append((dest_id, output))
-
                     elif self._components[dest_id]["options"]["phase"] == "process" and len(output) > 0:
                         proc_stack.append((dest_id, output))
                     else:
