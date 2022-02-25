@@ -150,7 +150,8 @@ class FlowRun():
                     if dest == dest_id:
                         out_comp.extend(inp[0])
                         out_comp = sorted(out_comp, key=lambda det: det["frame_data"]["frame"])
-                        del_list.append(index)
+                        if index not in del_list:
+                            del_list.append(index)
                         break
                 else:
                     proc_stack.append((dest_id, inp[0]))
