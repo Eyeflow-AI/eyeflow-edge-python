@@ -148,6 +148,10 @@ class FlowRun():
                 # concatenate/update outputs to a same destiny
                 for dest, out_comp in proc_stack:
                     if dest == dest_id:
+                        all_frames = [(fr["frame_data"]["camera_name"], fr["frame_data"]["frame"]) for fr in out_comp]
+                        if all((i["frame_data"]["camera_name"], i["frame_data"]["frame"]) in all_frames for i in inp[0]):
+                            continue
+
                         out_comp.extend(inp[0])
                         out_comp = sorted(out_comp, key=lambda det: det["frame_data"]["frame"])
                         if index not in del_list:
