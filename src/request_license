@@ -59,7 +59,7 @@ def main(args=None):
     validation_code = response.json()['payload']['validation_code']
     print(f'Digite o código no front end {validation_code} para validar o device.')
     checking_info = {
-        "edge_id": device_info["edge_id", 
+        "edge_id": device_info["edge_id"], 
         "environment_id": device_info["environment_id"],
         "validation_code": validation_code,
     }
