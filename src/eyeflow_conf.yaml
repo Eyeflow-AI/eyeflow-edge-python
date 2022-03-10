@@ -36,3 +36,4 @@ file-service:
         cloud_folder: flow-components
 
 flow_folder: /opt/eyeflow/data/flow
+ws: https://app.eyeflow.ai

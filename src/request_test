@@ -1,0 +1,43 @@
+#!/usr/bin/python3
+
+import os
+import json
+import requests
+import time
+
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+
+device_info = {
+    "device_architecture": "tegra-aarch64",
+    "device_sn": "1420921087973",
+    "edge_id": "62213144c4b67f0013164f32",
+    "hostname": "techboard",
+    "node_id": 79921510090829,
+    "ip": "10.60.1.59",
+    "environment_id": "5fcd69ce139188003f9eaa83"
+}
+
+validated = False
+
+response = requests.post(f"https://dev.eyeflow.ai/edge/activate/", data=device_info)
+validation_code = response.json()['payload']['validation_code']
+print(f'Digite o código no front end {validation_code} para validar o device.')
+checking_info = {
+   "edge_id": "62213144c4b67f0013164f32", 
+   "environment_id": "5fcd69ce139188003f9eaa83",
+   "validation_code": validation_code,
+}
+
+counter = 0
+while not validated:
+    counter += 1
+    print(f'Round: {counter}')
+    get_response = requests.get(f"https://dev.eyeflow.ai/edge/check-validation/?edge_id={checking_info['edge_id']}&environment_id={checking_info['environment_id']}&validation_code={checking_info['validation_code']}")
+    if (get_response.json().get('ok') == True):
+        with open('edge.license', 'w') as _license:
+            _license.write(get_response.json()['info']['token'])
+        validated = True
+        print('Validado!')
+    else:
+        time.sleep(5)
+

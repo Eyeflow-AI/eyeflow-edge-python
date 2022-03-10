@@ -1,11 +1,18 @@
 #!/usr/bin/python3
 
+import os
 import sys
+import time
 import json
-import argparse
-import pprint
-from bson import ObjectId
 import utils
+import pprint
+import requests
+import argparse
+from bson import ObjectId
+from eyeflow_sdk.log_obj import CONFIG
+
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+
 #----------------------------------------------------------------------------------------------------------------------------------
 
 def parse_args(args):
@@ -46,6 +53,29 @@ def main(args=None):
     with open(args.out_file, 'w') as fp:
         json.dump(device_info, fp, default=str, ensure_ascii=False)
 
+    # Start validation process
+    validated = False
+    response = requests.post(f"{CONFIG['ws']}/edge/activate/", data=device_info)
+    validation_code = response.json()['payload']['validation_code']
+    print(f'Digite o código no front end {validation_code} para validar o device.')
+    checking_info = {
+        "edge_id": device_info["edge_id", 
+        "environment_id": device_info["environment_id"],
+        "validation_code": validation_code,
+    }
+    counter = 0
+    while not validated:
+        counter += 1
+        print(f'{counter}ª Tentativa')
+        get_response = requests.get(f"{CONFIG['ws']}/edge/check-validation/?edge_id={checking_info['edge_id']}&environment_id={checking_info['environment_id']}&validation_code={checking_info['validation_code']}")
+        if (get_response.json().get('ok') == True):
+            with open('edge.license', 'w') as _license:
+                _license.write(get_response.json()['info']['token'])
+            validated = True
+            print('Validado!')
+        else:
+            time.sleep(5)
+            
     pprint.pprint(device_info)
 #----------------------------------------------------------------------------------------------------------------------------------
 
