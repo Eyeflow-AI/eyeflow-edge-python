@@ -1,17 +1,19 @@
-#!/usr/bin/python3
-
 import os
 import sys
 import time
+import yaml
 import json
 import utils
 import pprint
 import requests
 import argparse
 from bson import ObjectId
-from eyeflow_sdk.log_obj import CONFIG
 
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+CONFIG = None
+
+os.environ["CONF_PATH"] = os.path.dirname(__file__)
+with open(os.path.join(os.path.dirname(__file__), "eyeflow_conf.yaml"), "r") as ymlfile:
+    CONFIG = yaml.safe_load(ymlfile)
 
 #----------------------------------------------------------------------------------------------------------------------------------
 
@@ -49,6 +51,7 @@ def main(args=None):
 
     device_info["edge_id"] = args.edge_id
     device_info["environment_id"] = args.environment_id
+    device_info["device_sn"] = device_info.get('device_sn') or None
 
     with open(args.out_file, 'w') as fp:
         json.dump(device_info, fp, default=str, ensure_ascii=False)
@@ -56,27 +59,30 @@ def main(args=None):
     # Start validation process
     validated = False
     response = requests.post(f"{CONFIG['ws']}/edge/activate/", data=device_info)
-    validation_code = response.json()['payload']['validation_code']
-    print(f'Digite o código no front end {validation_code} para validar o device.')
-    checking_info = {
-        "edge_id": device_info["edge_id", 
-        "environment_id": device_info["environment_id"],
-        "validation_code": validation_code,
-    }
-    counter = 0
-    while not validated:
-        counter += 1
-        print(f'{counter}ª Tentativa')
-        get_response = requests.get(f"{CONFIG['ws']}/edge/check-validation/?edge_id={checking_info['edge_id']}&environment_id={checking_info['environment_id']}&validation_code={checking_info['validation_code']}")
-        if (get_response.json().get('ok') == True):
-            with open('edge.license', 'w') as _license:
-                _license.write(get_response.json()['info']['token'])
-            validated = True
-            print('Validado!')
-        else:
-            time.sleep(5)
-            
-    pprint.pprint(device_info)
+    if (response.json().get('payload')):        
+        validation_code = response.json()['payload']['validation_code']
+        print(f'Digite o código no front end {validation_code} para validar o device.')
+        checking_info = {
+            "edge_id": device_info["edge_id"],
+            "environment_id": device_info["environment_id"],
+            "validation_code": validation_code,
+        }
+        counter = 0
+        while not validated:
+            counter += 1
+            print(f'{counter}ª Tentativa')
+            get_response = requests.get(f"{CONFIG['ws']}/edge/check-validation/?edge_id={checking_info['edge_id']}&environment_id={checking_info['environment_id']}&validation_code={checking_info['validation_code']}")
+            if (get_response.json().get('ok') == True):
+                with open('edge.license', 'w') as _license:
+                    _license.write(get_response.json()['info']['token'])
+                with open('edge-key.pub', 'w') as _pub:
+                    _pub.write(get_response.json()['info']['public_key'])
+                validated = True
+                print('Validated!')
+            else:
+                time.sleep(5)
+    else:
+        print(response.json()['error']['message'])
 #----------------------------------------------------------------------------------------------------------------------------------
 
 main()
