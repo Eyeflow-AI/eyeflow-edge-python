@@ -73,9 +73,9 @@ def main(args=None):
             print(f'{counter}ª attempt')
             get_response = requests.get(f"{CONFIG['ws']}/edge/check-validation/?edge_id={checking_info['edge_id']}&environment_id={checking_info['environment_id']}&validation_code={checking_info['validation_code']}")
             if (get_response.json().get('ok') == True):
-                with open('edge.license', 'w') as _license:
+                with open(os.path.join(os.path.dirname(__file__), 'edge.license'), 'w') as _license:
                     _license.write(get_response.json()['info']['token'])
-                with open('edge-key.pub', 'w') as _pub:
+                with open(os.path.join(os.path.dirname(__file__), 'edge-key.pub'), 'w') as _pub:
                     _pub.write(get_response.json()['info']['public_key'])
                 validated = True
                 print('Validated!')
