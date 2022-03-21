@@ -131,3 +131,6 @@ dmypy.json
 
 tmp/
 ef_conf.json
+edge.license
+edge-key.pub
+license.json
