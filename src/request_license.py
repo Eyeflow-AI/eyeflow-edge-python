@@ -70,7 +70,7 @@ def main(args=None):
         counter = 0
         while not validated:
             counter += 1
-            print(f'{counter}ª Tentativa')
+            print(f'{counter}ª attempt')
             get_response = requests.get(f"{CONFIG['ws']}/edge/check-validation/?edge_id={checking_info['edge_id']}&environment_id={checking_info['environment_id']}&validation_code={checking_info['validation_code']}")
             if (get_response.json().get('ok') == True):
                 with open('edge.license', 'w') as _license:
