@@ -49,7 +49,7 @@ def main(args=None):
     config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
     app_info, app_token = utils.get_license()
-    log.info(f'Edge ID: {app_info["edge_id"]} - System ID: {app_info["device_sn"]}')
+    log.info(f'Edge ID: {app_info["edge_id"]} - System ID: {app_info.get("device_sn")}')
     utils.check_license(app_info)
 
     try:
