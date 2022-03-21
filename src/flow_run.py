@@ -242,6 +242,7 @@ class FlowRun():
         while True:
             try:
                 frames_cams = []
+                frames_outputs = []
                 num_frames = 1
                 for cam in self._components["input"]:
                     metadata = {
@@ -258,13 +259,15 @@ class FlowRun():
                         metadata["key_event"] = True
                         key_event = False
 
-                    frames_cams.append((cam["object"].get_frames(metadata, num_frames=num_frames), cam["outputs"]["0"]["nodes"]))
+                    proc = (cam["object"].get_frames(metadata, num_frames=num_frames), cam["outputs"]["0"]["nodes"])
+                    frames_cams.append(proc)
+                    frames_outputs.append(proc)
 
                 self.process_frames(frames_cams)
 
                 if img_output:
                     frames_draw = []
-                    for frames in frames_cams:
+                    for frames in frames_outputs:
                         frames_draw.append(draw_obj.draw_frames(frames[0]))
 
                     for frame in range(num_frames):
