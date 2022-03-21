@@ -73,7 +73,6 @@ def main(args=None):
             print(f'{counter}ª Tentativa')
             get_response = requests.get(f"{CONFIG['ws']}/edge/check-validation/?edge_id={checking_info['edge_id']}&environment_id={checking_info['environment_id']}&validation_code={checking_info['validation_code']}")
             if (get_response.json().get('ok') == True):
-                print(get_response.json())
                 with open('edge.license', 'w') as _license:
                     _license.write(get_response.json()['info']['token'])
                 with open('edge-key.pub', 'w') as _pub:
