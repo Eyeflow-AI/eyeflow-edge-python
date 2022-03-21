@@ -148,6 +148,7 @@ def get_license(filename="edge.license"):
         public_key = fp.read()
 
     app_info = jwt.decode(app_token, public_key, algorithms=['RS256'])
+    print(app_info)
     return app_info, app_token
 #----------------------------------------------------------------------------------------------------------------------------------
 
