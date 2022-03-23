@@ -80,7 +80,7 @@ def prepare_models(app_token, flow_data):
 
                 comp_lib = load_model_component(component_id, component_name)
                 dnn_component = comp_lib.Component(dataset_id, dataset["dataset_parms"])
-                dnn_component.set_model()
+                dnn_component.set_model(train=False)
                 dnn_component.export_model(model_path=os.path.join(model_folder, dataset_id))
 #----------------------------------------------------------------------------------------------------------------------------------
 
