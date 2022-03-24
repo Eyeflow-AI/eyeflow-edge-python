@@ -61,7 +61,8 @@ def main(args=None):
     response = requests.post(f"{CONFIG['ws']}/edge/activate/", data=device_info)
     if (response.json().get('payload')):        
         validation_code = response.json()['payload']['validation_code']
-        print(f'Digite o código no front end {validation_code} para validar o device.')
+        print('Digite o código no front end para validar o device:')
+        print(f'{validation_code}')
         checking_info = {
             "edge_id": device_info["edge_id"],
             "environment_id": device_info["environment_id"],
