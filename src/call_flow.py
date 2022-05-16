@@ -80,7 +80,7 @@ def main(args=None):
             out_monitor.append(vid)
 
         if args.save_img:
-            sav = flow_run.ImageSave(flow_id, args.save_img)
+            sav = flow_run.ImageSave(edge_data["flow_name"], args.save_img)
             out_monitor.append(sav)
 
         log.info(f"Runnig flow at edge - Flow ID: {flow_id}")
