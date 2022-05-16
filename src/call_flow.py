@@ -16,7 +16,7 @@ import tensorflow as tf
 
 os.environ["CONF_PATH"] = os.path.dirname(__file__)
 
-from eyeflow_sdk.log_obj import log
+from eyeflow_sdk.log_obj import CONFIG, log
 
 import flow_run
 import utils
@@ -86,6 +86,9 @@ def main(args=None):
         log.info(f"Runnig flow at edge - Flow ID: {flow_id}")
 
         flow_data = edge_client.get_flow(app_token, flow_id)
+        if not flow_data:
+            local_cache = os.path.join(CONFIG["flow_folder"], flow_id + '.json')
+            flow_data = load_edge_data_json_file(local_cache)
         utils.prepare_models(app_token, flow_data)
         utils.get_flow_components(app_token, flow_data)
 
