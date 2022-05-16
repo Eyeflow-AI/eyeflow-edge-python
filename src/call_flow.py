@@ -64,7 +64,7 @@ def main(args=None):
         if not edge_data:
             json_path = f'/opt/eyeflow/src/edge_data.json'
             edge_data = load_edge_data_json_file(json_path)
-            if not edge_data
+            if not edge_data:
                 raise Exception("Fail getting edge_data")
 
         log.info(edge_data)
