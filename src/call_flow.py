@@ -20,6 +20,7 @@ from eyeflow_sdk.log_obj import log
 
 import flow_run
 import utils
+import json
 #----------------------------------------------------------------------------------------------------------------------------------
 
 def parse_args(args):
@@ -31,6 +32,12 @@ def parse_args(args):
     parser.add_argument('--save_img', help='Save image of detections to a folder.', type=str)
 
     return parser.parse_args(args)
+#----------------------------------------------------------------------------------------------------------------------------------
+
+def load_edge_data_json_file(json_path):
+    log.info(f'Loading Json: {json_path}')
+    with open(json_path, 'r') as json_file:
+        return json.load(json_file)
 #----------------------------------------------------------------------------------------------------------------------------------
 
 def main(args=None):
@@ -55,7 +62,10 @@ def main(args=None):
     try:
         edge_data = edge_client.get_edge_data(app_token)
         if not edge_data:
-            raise Exception("Fail getting edge_data")
+            json_path = f'/opt/eyeflow/src/edge_data.json'
+            edge_data = load_edge_data_json_file(json_path)
+            if not edge_data
+                raise Exception("Fail getting edge_data")
 
         log.info(edge_data)
         flow_id = edge_data["flow_id"]
