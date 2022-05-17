@@ -1,4 +1,4 @@
-{
+[{
     "_id": "61d732fea6b18a7156c20a0c",
     "name": "edge-station-1",
     "env_id": "604979fc87f9ad005a22dd1f",
@@ -53,4 +53,4 @@
     "flow_id": "5ec92d7c5602f5bf15322b40",
     "flow_name": "Audi-TOP",
     "package_id": "5fc6da49c4397ac188ddd73d"
-}
+}]
