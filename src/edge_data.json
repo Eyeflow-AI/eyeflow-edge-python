@@ -1,9 +1,56 @@
 {
+    "_id": "61d732fea6b18a7156c20a0c",
+    "name": "edge-station-1",
+    "env_id": "604979fc87f9ad005a22dd1f",
+    "flow_id": "5ec92d775602f5bf15322b3d",
+    "flow_name": "Audi-E-DIANT",
+    "package_id": "5fc6da49c4397ac188ddd73d"
+},
+{
+    "_id": "61d732c322b06bd708dd16b2",
+    "name": "edge-station-2",
+    "env_id": "604979fc87f9ad005a22dd1f",
+    "flow_id": "5ec92d785602f5bf15322b3e",
+    "flow_name": "Audi-EQ",
+    "package_id": "5fc6da49c4397ac188ddd73d"
+},
+{
+    "_id": "61d733134e821bdb8f6accf0",
+    "name": "edge-station-3",
+    "env_id": "604979fc87f9ad005a22dd1f",
+    "flow_id": "5ec92d795602f5bf15322b3f",
+    "flow_name": "Audi-E-TRAS",
+    "package_id": "5fc6da49c4397ac188ddd73d"
+},
+{
+    "_id": "61d73323b039007113bdc8fa",
+    "name": "edge-station-4",
+    "env_id": "604979fc87f9ad005a22dd1f",
+    "flow_id": "5ec92d715602f5bf15322b3a",
+    "flow_name": "Audi-D-DIANT",
+    "package_id": "5fc6da49c4397ac188ddd73d"
+},
+{
     "_id": "61d73336809c90d997b8196a",
     "name": "edge-station-5",
     "env_id": "604979fc87f9ad005a22dd1f",
     "flow_id": "5ec92d735602f5bf15322b3b",
-    "flow_modified_date": "2019-11-26 15:48:30",
     "flow_name": "Audi-DT",
+    "package_id": "5fc6da49c4397ac188ddd73d"
+},
+{
+    "_id": "61d7334039a5466ad74cfbb3",
+    "name": "edge-station-6",
+    "env_id": "604979fc87f9ad005a22dd1f",
+    "flow_id": "5ec92d755602f5bf15322b3c",
+    "flow_name": "Audi-D-TRAS",
+    "package_id": "5fc6da49c4397ac188ddd73d"
+},
+{
+    "_id": "61d733491e1e28111a265da1",
+    "name": "edge-station-7",
+    "env_id": "604979fc87f9ad005a22dd1f",
+    "flow_id": "5ec92d7c5602f5bf15322b40",
+    "flow_name": "Audi-TOP",
     "package_id": "5fc6da49c4397ac188ddd73d"
 }
