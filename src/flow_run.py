@@ -142,26 +142,9 @@ class FlowRun():
                 comp["object"].agregate_inputs(inputs)
 
         # Insert inputs in stack
-        del_list = []
-        for index, inp in enumerate(inputs):
+        for inp in inputs:
             for dest_id in inp[1]:
-                # concatenate/update outputs to a same destiny
-                for dest, out_comp in proc_stack:
-                    if dest == dest_id:
-                        all_frames = [(fr["frame_data"]["camera_name"], fr["frame_data"]["frame"]) for fr in out_comp]
-                        if all((i["frame_data"]["camera_name"], i["frame_data"]["frame"]) in all_frames for i in inp[0]):
-                            continue
-
-                        out_comp.extend(inp[0])
-                        out_comp = sorted(out_comp, key=lambda det: det["frame_data"]["frame"])
-                        if index not in del_list:
-                            del_list.append(index)
-                        break
-                else:
-                    proc_stack.append((dest_id, inp[0]))
-
-        for index in reversed(del_list):
-            del inputs[index]
+                proc_stack.append((dest_id, inp[0]))
 
         # process phase
         while len(proc_stack) > 0:
