@@ -245,7 +245,8 @@ class FlowRun():
                         metadata["key_event"] = True
                         key_event = False
 
-                    frames_cams.append((cam["object"].get_frames(metadata, num_frames=num_frames), cam["outputs"]["0"]["nodes"]))
+                    cam_output = list(cam["outputs"].keys())[0]
+                    frames_cams.append((cam["object"].get_frames(metadata, num_frames=num_frames), cam["outputs"][cam_output]["nodes"]))
 
                 self.process_frames(frames_cams)
 
