@@ -170,12 +170,12 @@ class FlowRun():
                         for dest, out_comp in out_stack:
                             if dest == dest_id:
                                 out_comp.extend(output)
-                                out_comp = sorted(out_comp, key=lambda det: det["frame_data"]["frame"])
+                                out_comp.sort(key=lambda det: det["frame_data"]["frame"])
                                 break
                         else:
                             out_stack.append((dest_id, output))
                     elif self._components[dest_id]["options"]["phase"] == "process" and len(output) > 0:
-                        proc_stack.append((dest_id, output))
+                        proc_stack.insert(0, (dest_id, output))
                     else:
                         raise Exception('Unknow phase: ' + self._components[dest_id]["phase"])
 
