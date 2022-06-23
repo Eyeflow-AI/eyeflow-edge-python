@@ -161,10 +161,10 @@ class FlowRun():
                     continue
 
                 for dest_id in comp["outputs"][out]["nodes"]:
-                    output = res[out]
-                    if not output:
+                    if not res[out]:
                         continue
 
+                    output = copy.deepcopy(res[out])
                     if self._components[dest_id]["options"]["phase"] == "output" and len(output) > 0:
                         # concatenate/update outputs to a same destiny
                         for dest, out_comp in out_stack:
@@ -175,7 +175,7 @@ class FlowRun():
                         else:
                             out_stack.append((dest_id, output))
                     elif self._components[dest_id]["options"]["phase"] == "process" and len(output) > 0:
-                        proc_stack.insert(0, (dest_id, output))
+                        proc_stack.append((dest_id, output))
                     else:
                         raise Exception('Unknow phase: ' + self._components[dest_id]["phase"])
 
