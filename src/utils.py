@@ -37,51 +37,56 @@ def prepare_models(app_token, flow_data):
 
     log.info(f"Prepare datasets for processing video")
 
+    datasets_downloaded = []
+    components_downloaded = []
     for comp in flow_data["nodes"]:
         if "dataset_id" in comp["options"]:
             dataset_id = comp["options"]["dataset_id"]
+            if dataset_id not in datasets_downloaded:
+                datasets_downloaded.append(dataset_id)
+                model_folder = CONFIG["file-service"]["model"]["local_folder"]
+                edge_client.get_model(app_token, dataset_id, model_folder=model_folder)
+                model_file = os.path.join(model_folder, dataset_id, dataset_id + ".json")
+                if not os.path.isfile(model_file):
+                    log.info(f'Model for dataset {dataset_id} not found. Generating.')
+                    dataset = edge_client.get_dataset(app_token, dataset_id)
+                    if not dataset:
+                        log.error(f'Fail loading dataset {dataset_id}')
+                        raise Exception(f'Fail loading dataset {dataset_id}')
 
-            model_folder = CONFIG["file-service"]["model"]["local_folder"]
-            edge_client.get_model(app_token, dataset_id, model_folder=model_folder)
-            model_file = os.path.join(model_folder, dataset_id, dataset_id + ".json")
-            if not os.path.isfile(model_file):
-                log.info(f'Model for dataset {dataset_id} not found. Generating.')
-                dataset = edge_client.get_dataset(app_token, dataset_id)
-                if not dataset:
-                    log.error(f'Fail loading dataset {dataset_id}')
-                    raise Exception(f'Fail loading dataset {dataset_id}')
+                    if "dnn_parms" in dataset["dataset_parms"]:
+                        dnn_parms = dataset["dataset_parms"]["dnn_parms"]
+                    elif "network_parms" in dataset["dataset_parms"] and "dnn_parms" in dataset["dataset_parms"]["network_parms"]:
+                        dnn_parms = dataset["dataset_parms"]["network_parms"]["dnn_parms"]
+                    else:
+                        raise Exception(f'dnn_parms not found in dataset_parms: {dataset["dataset_parms"]}')
 
-                if "dnn_parms" in dataset["dataset_parms"]:
-                    dnn_parms = dataset["dataset_parms"]["dnn_parms"]
-                elif "network_parms" in dataset["dataset_parms"] and "dnn_parms" in dataset["dataset_parms"]["network_parms"]:
-                    dnn_parms = dataset["dataset_parms"]["network_parms"]["dnn_parms"]
-                else:
-                    raise Exception(f'dnn_parms not found in dataset_parms: {dataset["dataset_parms"]}')
+                    component_name = dnn_parms.get("component_name", dnn_parms["component"])
+                    component_id = dnn_parms.get("component_id")
+                    if not component_id:
+                        if component_name == "objdet_af":
+                            component_id = "6143a1faef5cc63fd4c177b1"
+                        elif component_name == "objdet":
+                            component_id = "6143a1edef5cc63fd4c177b0"
+                        elif component_name == "class_cnn":
+                            component_id = "614388073a692cccdab0e69b"
+                        elif component_name == "obj_location":
+                            component_id = "6178516681cbe716153175b0"
 
-                component_name = dnn_parms.get("component_name", dnn_parms["component"])
-                component_id = dnn_parms.get("component_id")
-                if not component_id:
-                    if component_name == "objdet_af":
-                        component_id = "6143a1faef5cc63fd4c177b1"
-                    elif component_name == "objdet":
-                        component_id = "6143a1edef5cc63fd4c177b0"
-                    elif component_name == "class_cnn":
-                        component_id = "614388073a692cccdab0e69b"
-                    elif component_name == "obj_location":
-                        component_id = "6178516681cbe716153175b0"
+                    if component_id not in components_downloaded:
+                        components_downloaded.append(component_id)
+                        if not edge_client.get_model_component(
+                            app_token,
+                            model_component_id=component_id,
+                            model_component_folder=CONFIG["file-service"]["model-components"]["local_folder"]
+                        ):
+                            log.error(f'Fail get_model_component {component_id}')
+                            raise Exception(f'Fail get_model_component {component_id}')
 
-                if not edge_client.get_model_component(
-                    app_token,
-                    model_component_id=component_id,
-                    model_component_folder=CONFIG["file-service"]["model-components"]["local_folder"]
-                ):
-                    log.error(f'Fail get_model_component {component_id}')
-                    raise Exception(f'Fail get_model_component {component_id}')
-
-                comp_lib = load_model_component(component_id, component_name)
-                dnn_component = comp_lib.Component(dataset_id, dataset["dataset_parms"])
-                dnn_component.set_model(train=False)
-                dnn_component.export_model(model_path=os.path.join(model_folder, dataset_id))
+                    comp_lib = load_model_component(component_id, component_name)
+                    dnn_component = comp_lib.Component(dataset_id, dataset["dataset_parms"])
+                    dnn_component.set_model(train=False)
+                    dnn_component.export_model(model_path=os.path.join(model_folder, dataset_id))
 #----------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -94,15 +99,17 @@ def get_flow_components(app_token, flow_data):
 
     flow_component_folder = CONFIG["file-service"]["flow-components"]["local_folder"]
 
+    components_downloaded = []
     for comp in flow_data["nodes"]:
         component_id = comp["component_id"]
-        if not edge_client.get_flow_component(
-            app_token,
-            flow_component_id=component_id,
-            flow_component_folder=flow_component_folder
-        ):
-            log.error(f'Fail loading flow_component_id {component_id}')
-            raise Exception(f'Fail loading flow_component_id {component_id}')
+        if component_id not in components_downloaded:
+            if not edge_client.get_flow_component(
+                app_token,
+                flow_component_id=component_id,
+                flow_component_folder=flow_component_folder
+            ):
+                log.error(f'Fail loading flow_component_id {component_id}')
+                raise Exception(f'Fail loading flow_component_id {component_id}')
 
     sys.path.insert(0, flow_component_folder)
 #----------------------------------------------------------------------------------------------------------------------------------
@@ -115,9 +122,11 @@ def upload_flow_extracts(app_token, flow_data, max_examples=400):
 
     log.info(f"Upload extracts for flow")
 
+    datasets_uploaded = []
     for comp in flow_data["nodes"]:
-        if "dataset_id" in comp["options"]:
+        if "dataset_id" in comp["options"] and comp["options"]["dataset_id"] not in datasets_uploaded:
             dataset_id = comp["options"]["dataset_id"]
+            datasets_uploaded.append(dataset_id)
             if not edge_client.upload_extract(
                 app_token,
                 dataset_id,
