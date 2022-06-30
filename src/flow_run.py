@@ -195,16 +195,18 @@ class FlowRun():
                     if self._components[dest_id]["options"]["phase"] == "output" and len(output) > 0:
                         # concatenate/update outputs to a same destiny
                         updated = False
-                        for dest, out in out_stack:
+                        for dest, out_comp in out_stack:
                             if dest == dest_id:
                                 updated = True
+                                out_comp.extend(output)
+                                out_comp = sorted(out_comp, key=lambda det: det["frame_data"]["frame"])
                                 for new_fr in output:
-                                    for fr in out:
+                                    for fr in out_comp:
                                         if new_fr["frame_data"]["camera_name"] == fr["frame_data"]["camera_name"] and new_fr["frame_data"]["frame"] == fr["frame_data"]["frame"]:
                                             fr["frame_data"].update(new_fr["frame_data"])
                                             break
                                     else:
-                                        out.append(new_fr)
+                                        out_comp.append(new_fr)
 
                         if not updated:
                             out_stack.append((dest_id, output))
