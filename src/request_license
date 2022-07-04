@@ -1,10 +1,11 @@
+#!/usr/bin/python3
+
 import os
 import sys
 import time
 import yaml
 import json
 import utils
-import pprint
 import requests
 import argparse
 from bson import ObjectId
@@ -20,7 +21,7 @@ with open(os.path.join(os.path.dirname(__file__), "eyeflow_conf.yaml"), "r") as 
 def parse_args(args):
     """ Parse the arguments.
     """
-    parser = argparse.ArgumentParser(prog='tokengen', description='Eyeflow Create Environment')
+    parser = argparse.ArgumentParser(prog='request_license', description='Eyeflow Request License')
     parser.add_argument('edge_id', help='The ID of edge device', type=str)
     parser.add_argument('environment_id', help='The ID of client environment', type=str)
     parser.add_argument('--out_file', '-o', dest='out_file', help='The json file to save device info', type=str, action='store', default='license.json')
@@ -59,7 +60,7 @@ def main(args=None):
     # Start validation process
     validated = False
     response = requests.post(f"{CONFIG['ws']}/edge/activate/", data=device_info)
-    if (response.json().get('payload')):        
+    if (response.json().get('payload')):
         validation_code = response.json()['payload']['validation_code']
         print('Digite o código no front end para validar o device:')
         print(f'{validation_code}')
