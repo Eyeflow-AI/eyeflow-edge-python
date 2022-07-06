@@ -40,22 +40,12 @@ sudo apt-get install -y --no-install-recommends \
 
 ## Install cuda on wsl
 ```
-wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
-sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
-sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
-sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
-sudo apt-get update
-sudo apt-get -y install cuda-toolkit-10-2
-cd /usr/local/cuda/lib64
-sudo ln -s libcudart.so.10.2.89 libcudart.so.10.1
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
+sudo dpkg -i cuda-keyring_1.0-1_all.deb
+sudo apt update
+sudo apt -y install cuda-toolkit-11-2
+sudo apt -y install libcudnn8 libcudnn8-dev
 ```
-
-## Download and install CUDNN
-```
-sudo dpkg -i libcudnn7_7.6.5.32-1+cuda10.2_amd64.deb
-sudo dpkg -i libcudnn7-dev_7.6.5.32-1+cuda10.2_amd64.deb
-```
-
 
 ## Install Python packages
 ```
