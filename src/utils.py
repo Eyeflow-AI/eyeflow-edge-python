@@ -111,6 +111,8 @@ def get_flow_components(app_token, flow_data):
                 log.error(f'Fail loading flow_component_id {component_id}')
                 raise Exception(f'Fail loading flow_component_id {component_id}')
 
+            components_downloaded.append(component_id)
+
     sys.path.insert(0, flow_component_folder)
 #----------------------------------------------------------------------------------------------------------------------------------
 
