@@ -127,6 +127,9 @@ class FlowRun():
         self._components["input_agregation"] = []
         self.load_components()
         self.load_models()
+        self._update_monitor_images_time = 0.5
+        self._last_original_image_time = datetime.datetime.now()
+        self._last_annotated_image_time = datetime.datetime.now()
 
     def load_components(self):
         comp_folder = CONFIG["file-service"]["flow-components"]["local_folder"]
