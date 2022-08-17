@@ -88,23 +88,31 @@ class ImageSave():
             pass
 
 
-def saveImage(dir, image_name, image):
+class SaveSplitImage():
+    """
+    Classe que salva as imagens das cameras separadamente
+    """
 
-    save_path = Path(dir)
-    if not save_path.is_dir():
-        save_path.mkdir(parents=True, exist_ok=True)
+    def __init__(self, dir, image_name, image):
+        save_path = Path(dir)
+        if not save_path.is_dir():
+            save_path.mkdir(parents=True, exist_ok=True)
 
-    try:
-        img_file = os.path.join(dir, image_name)
-        cv2.imwrite(img_file + "-tmp.jpg", image)
-        if os.path.isfile(img_file):
-            os.remove(img_file)
-        os.rename(img_file + "-tmp.jpg", img_file)
+        self._image_name = image_name
+        self._save_path = save_path
+        self._image = image
 
-        return True
-    except Exception as err:
-        log.error(f'Failed to write image. Err: {err}')
-        return False
+    def __call__(self):
+        try:
+            img_file = os.path.join(self._save_path, self._image_name)
+            cv2.imwrite(img_file + "-tmp.jpg", self._image)
+            if os.path.isfile(img_file):
+                os.remove(img_file)
+            os.rename(img_file + "-tmp.jpg", img_file)
+        except Exception as err:
+            log.error(f'Failed to write image. Err: {err}')
+            pass
+
 # ----------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -301,8 +309,9 @@ class FlowRun():
                             input_image = frames[0][0]['input_image']
                             camera_name = frames[0][0]['frame_data']['camera_name']
                             # /opt/eyeflow/data/monitor
-                            success = saveImage(
+                            success = SaveSplitImage(
                                 self._save_split_images, f'{camera_name}.jpg', input_image)
+                            success()
                             success_list.append(success)
 
                     if len(success_list) > 0:
