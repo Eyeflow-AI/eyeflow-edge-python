@@ -5,6 +5,10 @@ Function to run a flow at edge
 Author: Alex Sobral de Freitas
 """
 
+import json
+import utils
+import flow_run
+from eyeflow_sdk.log_obj import CONFIG, log
 import os
 import traceback
 import sys
@@ -16,29 +20,33 @@ import tensorflow as tf
 
 os.environ["CONF_PATH"] = os.path.dirname(__file__)
 
-from eyeflow_sdk.log_obj import CONFIG, log
 
-import flow_run
-import utils
-import json
-#----------------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------------
+
 
 def parse_args(args):
     """ Parse the arguments.
     """
     parser = argparse.ArgumentParser(description='Process a flow.')
-    parser.add_argument('--monitor', help='Show image of detection real-time.', action='store_true')
-    parser.add_argument('--video', help='Record image of detection in a video.', action='store_true')
-    parser.add_argument('--save_img', help='Save image of detections to a folder.', type=str)
+    parser.add_argument(
+        '--monitor', help='Show image of detection real-time.', action='store_true')
+    parser.add_argument(
+        '--video', help='Record image of detection in a video.', action='store_true')
+    parser.add_argument(
+        '--save_split_imgs', help='Path to save split images of detections to a folder.', type=str)
+    parser.add_argument(
+        '--save_img', help='Save concatenated image of detections to a folder.', type=str)
 
     return parser.parse_args(args)
-#----------------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------------
+
 
 def load_edge_data_json_file(json_path):
     log.info(f'Loading Json: {json_path}')
     with open(json_path, 'r') as json_file:
         return json.load(json_file)
-#----------------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------------
+
 
 def main(args=None):
     # parse arguments
@@ -53,13 +61,16 @@ def main(args=None):
 
     physical_devices = tf.config.experimental.list_physical_devices('GPU')
     assert len(physical_devices) > 0, "Not enough GPU hardware devices available"
-    config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
+    config = tf.config.experimental.set_memory_growth(
+        physical_devices[0], True)
 
     app_info, app_token = utils.get_license()
-    log.info(f'Edge ID: {app_info["edge_id"]} - System ID: {app_info.get("device_sn")}')
+    log.info(
+        f'Edge ID: {app_info["edge_id"]} - System ID: {app_info.get("device_sn")}')
     utils.check_license(app_info)
 
     try:
+        save_split_images = ''
         edge_data = edge_client.get_edge_data(app_token)
         if not edge_data:
             json_path = f'/opt/eyeflow/src/edge_data.json'
@@ -83,16 +94,22 @@ def main(args=None):
             sav = flow_run.ImageSave(edge_data["flow_name"], args.save_img)
             out_monitor.append(sav)
 
+        if args.save_split_imgs:
+            save_split_images = args.save_split_imgs
+            # out_monitor.append(save_split_images)
+
         log.info(f"Runnig flow at edge - Flow ID: {flow_id}")
 
         flow_data = edge_client.get_flow(app_token, flow_id)
         if not flow_data:
-            local_cache = os.path.join(CONFIG["flow_folder"], flow_id + '.json')
+            local_cache = os.path.join(
+                CONFIG["flow_folder"], flow_id + '.json')
             flow_data = load_edge_data_json_file(local_cache)
         utils.prepare_models(app_token, flow_data)
         utils.get_flow_components(app_token, flow_data)
 
-        flow_obj = flow_run.FlowRun(flow_id, flow_data, device_info=app_info["edge_id"])
+        flow_obj = flow_run.FlowRun(
+            flow_id, flow_data, device_info=app_info["edge_id"], save_split_images=save_split_images)
         flow_obj.process_flow(img_output=out_monitor, out_frame=(1530, 1020))
 
         utils.upload_flow_extracts(app_token, flow_data)
@@ -101,7 +118,8 @@ def main(args=None):
         log.error(f'Fail processing flow')
         log.error(traceback.format_exc())
         return
-#----------------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     main()
