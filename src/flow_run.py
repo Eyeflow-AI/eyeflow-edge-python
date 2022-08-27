@@ -164,7 +164,8 @@ class FlowRun():
                     if not res[out]:
                         continue
 
-                    output = copy.deepcopy(res[out])
+                    # output = copy.deepcopy(res[out])
+                    output = res[out]
                     if self._components[dest_id]["options"]["phase"] == "output" and len(output) > 0:
                         # concatenate/update outputs to a same destiny
                         for dest, out_comp in out_stack:
