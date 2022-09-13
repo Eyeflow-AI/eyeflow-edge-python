@@ -177,14 +177,18 @@ def get_ip():
 #----------------------------------------------------------------------------------------------------------------------------------
 
 
-def get_device_sn():
+def get_device_sn(OS='Linux'):
     try:
-        filename = "/sys/class/dmi/id/product_uuid"
-        if os.path.isfile(filename):
-            with open(filename, 'r') as fp:
-                device_id = fp.readline()
+        if OS == 'Windows':
+            cmd = 'wmic bios get serialnumber'
+            return os.popen(cmd).read().replace("\n","").replace("	","").replace(" ","")
+        else:
+            filename = "/sys/class/dmi/id/product_uuid"
+            if os.path.isfile(filename):
+                with open(filename, 'r') as fp:
+                    device_id = fp.readline()
 
-            return device_id.rstrip()
+                return device_id.rstrip()
     except:
         return None
 #----------------------------------------------------------------------------------------------------------------------------------
@@ -192,7 +196,7 @@ def get_device_sn():
 
 def get_device_info():
     plat_info = platform.platform().split('-')
-    if plat_info[0] != "Linux":
+    if plat_info[0] not in ["Linux", "Windows"]:
         raise Exception(f"Invalid platform: {plat_info[0]}")
 
     if "aarch64" in plat_info:
@@ -204,6 +208,10 @@ def get_device_info():
         device_arch = f"{plat_info[idx - 1]}-{plat_info[idx]}"
         device_sn = get_device_sn()
     # 'WSL2-x86_64'
+    elif "Windows" in plat_info:
+        #Ex: Windows-10-10.0.22000-SP0
+        device_arch = plat_info
+        device_sn = get_device_sn(OS="Windows")
     else:
         raise Exception(f"Invalid device_architecture: {'-'.join(plat_info)}")
 
