@@ -19,8 +19,6 @@ from eyeflow_sdk import edge_client
 import tensorflow as tf
 
 os.environ["CONF_PATH"] = os.path.dirname(__file__)
-
-
 # ----------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -28,14 +26,10 @@ def parse_args(args):
     """ Parse the arguments.
     """
     parser = argparse.ArgumentParser(description='Process a flow.')
-    parser.add_argument(
-        '--monitor', help='Show image of detection real-time.', action='store_true')
-    parser.add_argument(
-        '--video', help='Record image of detection in a video.', action='store_true')
-    parser.add_argument(
-        '--save_split_imgs', help='Path to save split images of detections to a folder.', type=str)
-    parser.add_argument(
-        '--save_img', help='Save concatenated image of detections to a folder.', type=str)
+    parser.add_argument('--monitor', help='Show image of detection real-time.', action='store_true')
+    parser.add_argument('--video', help='Record image of detection in a video.', action='store_true')
+    parser.add_argument('--save_split_imgs', help='Path to save split images of detections to a folder.', type=str)
+    parser.add_argument('--save_img', help='Save concatenated image of detections to a folder.', type=str)
 
     return parser.parse_args(args)
 # ----------------------------------------------------------------------------------------------------------------------------------
@@ -61,12 +55,10 @@ def main(args=None):
 
     physical_devices = tf.config.experimental.list_physical_devices('GPU')
     if len(physical_devices) > 0:
-        config = tf.config.experimental.set_memory_growth(
-            physical_devices[0], True)
+        config = tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
     app_info, app_token = utils.get_license()
-    log.info(
-        f'Edge ID: {app_info["edge_id"]} - System ID: {app_info.get("device_sn")}')
+    log.info(f'Edge ID: {app_info["edge_id"]} - System ID: {app_info.get("device_sn")}')
     utils.check_license(app_info)
 
     try:
@@ -102,14 +94,13 @@ def main(args=None):
 
         flow_data = edge_client.get_flow(app_token, flow_id)
         if not flow_data:
-            local_cache = os.path.join(
-                CONFIG["flow_folder"], flow_id + '.json')
+            local_cache = os.path.join(CONFIG["flow_folder"], flow_id + '.json')
             flow_data = load_edge_data_json_file(local_cache)
+
         utils.prepare_models(app_token, flow_data)
         utils.get_flow_components(app_token, flow_data)
 
-        flow_obj = flow_run.FlowRun(
-            flow_id, flow_data, device_info=app_info["edge_id"], save_split_images=save_split_images)
+        flow_obj = flow_run.FlowRun(flow_id, flow_data, device_info=app_info["edge_id"], save_split_images=save_split_images)
         flow_obj.process_flow(img_output=out_monitor, out_frame=(1530, 1020))
 
         utils.upload_flow_extracts(app_token, flow_data)

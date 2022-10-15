@@ -20,7 +20,6 @@ from eyeflow_sdk import img_utils
 from eyeflow_sdk.log_obj import log, CONFIG
 # ----------------------------------------------------------------------------------------------------------------------------------
 
-
 class VideoSave():
     """
     Classe que recebe as imagens de um flow para salvar em um vídeo
@@ -34,18 +33,17 @@ class VideoSave():
         self._flow_id = flow_id
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         datetime_now = datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S")
-        intermediate_file = os.path.join(
-            video_path, f"flow_run_proc-{datetime_now}.avi")
-        self._out_video = cv2.VideoWriter(
-            intermediate_file, fourcc, 5, out_frame, True)
+        intermediate_file = os.path.join(video_path, f"flow_run_proc-{datetime_now}.avi")
+        self._out_video = cv2.VideoWriter(intermediate_file, fourcc, 5, out_frame, True)
+
 
     def __call__(self, frames):
         self._out_video.write(frames)
 
+
     def __del__(self):
         self._out_video.release()
 # ----------------------------------------------------------------------------------------------------------------------------------
-
 
 class MonitorShow():
     """
@@ -55,14 +53,15 @@ class MonitorShow():
     def __init__(self, flow_id):
         self._flow_id = flow_id
 
+
     def __call__(self, frames):
         cv2.namedWindow('Detection', cv2.WINDOW_AUTOSIZE)
         cv2.imshow('Detection', frames)
 
+
     def __del__(self):
         cv2.destroyAllWindows()
 # ----------------------------------------------------------------------------------------------------------------------------------
-
 
 class ImageSave():
     """
@@ -77,6 +76,7 @@ class ImageSave():
         self._flow_id = flow_id
         self._save_path = save_path
 
+
     def __call__(self, frames):
         try:
             img_file = os.path.join(self._save_path, f"{self._flow_id}.jpg")
@@ -86,7 +86,7 @@ class ImageSave():
             os.rename(img_file + "-tmp.jpg", img_file)
         except:
             pass
-
+# ----------------------------------------------------------------------------------------------------------------------------------
 
 class SaveSplitImage():
     """
@@ -102,19 +102,19 @@ class SaveSplitImage():
         self._save_path = save_path
         self._image = image
 
+
     def __call__(self):
         try:
             img_file = os.path.join(self._save_path, self._image_name)
             cv2.imwrite(img_file + "-tmp.jpg", self._image)
             if os.path.isfile(img_file):
                 os.remove(img_file)
+
             os.rename(img_file + "-tmp.jpg", img_file)
         except Exception as err:
             log.error(f'Failed to write image. Err: {err}')
             pass
-
 # ----------------------------------------------------------------------------------------------------------------------------------
-
 
 class FlowRun():
     """
@@ -139,6 +139,7 @@ class FlowRun():
         self._last_original_image_time = datetime.datetime.now()
         self._last_annotated_image_time = datetime.datetime.now()
 
+
     def load_components(self):
         comp_folder = CONFIG["file-service"]["flow-components"]["local_folder"]
         sys.path.insert(0, comp_folder)
@@ -147,12 +148,10 @@ class FlowRun():
             if not (self._video_test and comp["options"]["phase"] == 'input'):
                 try:
                     log.info(f'Load Component: {comp["component_name"]}')
-                    comp_lib = importlib.import_module(
-                        f'{comp["component_id"]}.{comp["component_name"]}')
+                    comp_lib = importlib.import_module(f'{comp["component_id"]}.{comp["component_name"]}')
                     comp["object"] = comp_lib.Component(comp)
                 except Exception as excp:
-                    raise Exception(
-                        f'Component load fail: {comp["component_name"]} - {str(excp)}')
+                    raise Exception(f'Component load fail: {comp["component_name"]} - {str(excp)}')
 
             if comp["options"]["phase"] == "input":
                 self._components["input"].append(comp)
@@ -165,6 +164,7 @@ class FlowRun():
 
             self._components[comp["_id"]] = copy.copy(comp)
 
+
     def load_models(self):
         for comp_id in self._components:
             if comp_id not in ["input", "input_agregation"]:
@@ -172,6 +172,7 @@ class FlowRun():
                 if comp["options"]["phase"] == "process":
                     if hasattr(comp["object"], "load_model"):
                         comp["object"].load_model()
+
 
     def process_frames(self, inputs):
         proc_stack = list()
@@ -197,8 +198,7 @@ class FlowRun():
 
             for out in res.keys():
                 if out not in comp.get("outputs", {}):
-                    log.warning(
-                        f'Output not in component: {out} - {comp["component_name"]} -  {comp}')
+                    log.warning(f'Output not in component: {out} - {comp["component_name"]} -  {comp}')
                     continue
 
                 for dest_id in comp["outputs"][out]["nodes"]:
@@ -212,8 +212,7 @@ class FlowRun():
                         for dest, out_comp in out_stack:
                             if dest == dest_id:
                                 out_comp.extend(output)
-                                out_comp.sort(
-                                    key=lambda det: det["frame_data"]["frame"])
+                                out_comp.sort(key=lambda det: det["frame_data"]["frame"])
                                 break
                         else:
                             out_stack.append((dest_id, output))
@@ -231,9 +230,9 @@ class FlowRun():
 
             for out in res.keys():
                 if out not in comp.get("outputs", {}):
-                    log.warning(
-                        f'Output not in component: {out} - {comp["component_name"]} -  {comp}')
+                    log.warning(f'Output not in component: {out} - {comp["component_name"]} -  {comp}')
                     continue
+
                 for dest_id in comp["outputs"][out]["nodes"]:
                     output = res[out]
 
@@ -244,13 +243,11 @@ class FlowRun():
                             if dest == dest_id:
                                 updated = True
                                 out_comp.extend(output)
-                                out_comp = sorted(
-                                    out_comp, key=lambda det: det["frame_data"]["frame"])
+                                out_comp = sorted(out_comp, key=lambda det: det["frame_data"]["frame"])
                                 for new_fr in output:
                                     for fr in out_comp:
                                         if new_fr["frame_data"]["camera_name"] == fr["frame_data"]["camera_name"] and new_fr["frame_data"]["frame"] == fr["frame_data"]["frame"]:
-                                            fr["frame_data"].update(
-                                                new_fr["frame_data"])
+                                            fr["frame_data"].update(new_fr["frame_data"])
                                             break
                                     else:
                                         out_comp.append(new_fr)
@@ -261,6 +258,7 @@ class FlowRun():
                         out_stack.append((dest_id, output))
 
         return [[p["output_data"] for p in cam[0]] for cam in inputs]
+
 
     def process_flow(self, img_output=[], out_frame=(1530, 1020)):
         key_press = 0
@@ -287,16 +285,14 @@ class FlowRun():
 
                     if self._flow_data.get("include_event_image", False):
                         metadata["event_image"] = ""
-                        metadata["event_scale"] = self._flow_data.get(
-                            "event_image_scale", 1.0)
+                        metadata["event_scale"] = self._flow_data.get("event_image_scale", 1.0)
 
                     if key_event:
                         metadata["key_event"] = True
                         key_event = False
 
                     cam_output = list(cam["outputs"].keys())[0]
-                    frames_cams.append((cam["object"].get_frames(
-                        metadata, num_frames=num_frames), cam["outputs"][cam_output]["nodes"]))
+                    frames_cams.append((cam["object"].get_frames(metadata, num_frames=num_frames), cam["outputs"][cam_output]["nodes"]))
 
                 self.process_frames(frames_cams)
 
@@ -306,12 +302,10 @@ class FlowRun():
                     success_list = []
                     for frames in frames_cams:
                         if (now - self._last_original_image_time).total_seconds() > self._update_monitor_images_time:
-
                             input_image = frames[0][0]['input_image']
                             camera_name = frames[0][0]['frame_data']['camera_name']
                             # /opt/eyeflow/data/monitor
-                            success = SaveSplitImage(
-                                self._save_split_images, f'{camera_name}.jpg', input_image)
+                            success = SaveSplitImage(self._save_split_images, f'{camera_name}.jpg', input_image)
                             success()
                             success_list.append(success)
 
@@ -320,8 +314,6 @@ class FlowRun():
                             self._last_original_image_time = now
                         else:
                             log.error('Failed to save monitor images')
-
-                # ==========
 
                 if img_output:
                     frames_draw = []

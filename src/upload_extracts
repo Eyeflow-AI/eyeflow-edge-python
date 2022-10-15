@@ -1,0 +1,83 @@
+#!/usr/bin/python3
+
+"""
+SiliconLife Eyeflow
+Function to upload flow extracts at edge
+
+Author: Alex Sobral de Freitas
+"""
+
+import os
+import traceback
+import sys
+import argparse
+import subprocess
+from eyeflow_sdk import edge_client
+
+import tensorflow as tf
+
+os.environ["CONF_PATH"] = os.path.dirname(__file__)
+
+from eyeflow_sdk.log_obj import log, CONFIG
+import utils
+#----------------------------------------------------------------------------------------------------------------------------------
+
+def parse_args(args):
+    """ Parse the arguments.
+    """
+    parser = argparse.ArgumentParser(description='Upload flow extracts.')
+    parser.add_argument('-d', '--dataset', help='The ID of dataset to upload', type=str)
+
+    return parser.parse_args(args)
+#----------------------------------------------------------------------------------------------------------------------------------
+
+def main(args=None):
+    # parse arguments
+    if args is None:
+        args = sys.argv[1:]
+
+    args = parse_args(args)
+
+    app_info, app_token = utils.get_license()
+    log.info(f'Edge ID: {app_info["edge_id"]} - System ID: {app_info.get("device_sn")}')
+    utils.check_license(app_info)
+
+    if args.dataset:
+        extract_path = os.path.join(CONFIG["file-service"]["extract"]["local_folder"], args.dataset)
+        files_uploaded = os.listdir(extract_path)
+        if not edge_client.upload_extract(
+            app_token,
+            args.dataset,
+            extract_folder=CONFIG["file-service"]["extract"]["local_folder"],
+            max_files=800,
+            thumb_size=128
+        ):
+            log.error(f'Fail uploading extract {args.dataset}')
+        else:
+            log.info("Deleting files from: " + extract_path)
+            for filename in files_uploaded:
+                try:
+                    os.remove(os.path.join(extract_path, filename))
+                except:
+                    pass
+    else:
+        try:
+            edge_data = edge_client.get_edge_data(app_token)
+            if not edge_data:
+                raise Exception("Fail getting edge_data")
+
+            log.info(edge_data)
+            flow_id = edge_data["flow_id"]
+
+            flow_data = edge_client.get_flow(app_token, flow_id)
+            utils.upload_flow_extracts(app_token, flow_data)
+
+        except Exception as expt:
+            log.error(f'Fail processing flow')
+            log.error(traceback.format_exc())
+            return
+
+#----------------------------------------------------------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    main()
