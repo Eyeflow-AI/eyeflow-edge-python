@@ -191,7 +191,12 @@ class FlowRun():
         while len(proc_stack) > 0:
             pack = proc_stack.pop(0)
             comp = self._components[pack[0]]
-            res = comp["object"].process_inputs(pack[1])
+            try:
+                res = comp["object"].process_inputs(pack[1])
+            except Exception as excp:
+                log.error(f'Fail processing inputs. Exception {excp}')
+                log.error(traceback.format_exc())
+                continue
 
             if not isinstance(res, dict):
                 continue
@@ -219,14 +224,18 @@ class FlowRun():
                     elif self._components[dest_id]["options"]["phase"] == "process" and len(output) > 0:
                         proc_stack.append((dest_id, output))
                     else:
-                        raise Exception('Unknow phase: ' +
-                                        self._components[dest_id]["phase"])
+                        raise Exception('Unknow phase: ' + self._components[dest_id]["phase"])
 
         # output phase
         while len(out_stack) > 0:
             pack = out_stack.pop(0)
             comp = self._components[pack[0]]
-            res = comp["object"].process_inputs(pack[1])
+            try:
+                res = comp["object"].process_inputs(pack[1])
+            except Exception as excp:
+                log.error(f'Fail processing inputs. Exception {excp}')
+                log.error(traceback.format_exc())
+                continue
 
             for out in res.keys():
                 if out not in comp.get("outputs", {}):

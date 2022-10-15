@@ -5,18 +5,18 @@ Function to run a flow at edge
 Author: Alex Sobral de Freitas
 """
 
-import json
-import utils
-import flow_run
-from eyeflow_sdk.log_obj import CONFIG, log
 import os
 import traceback
 import sys
 import argparse
-from eyeflow_sdk import edge_client
-# import edge_client
+import json
+import utils
+import flow_run
 
 import tensorflow as tf
+
+from eyeflow_sdk import edge_client
+from eyeflow_sdk.log_obj import CONFIG, log
 
 os.environ["CONF_PATH"] = os.path.dirname(__file__)
 # ----------------------------------------------------------------------------------------------------------------------------------
