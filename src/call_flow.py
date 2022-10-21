@@ -34,13 +34,17 @@ def parse_args(args):
     return parser.parse_args(args)
 # ----------------------------------------------------------------------------------------------------------------------------------
 
-
 def load_edge_data_json_file(json_path):
     log.info(f'Loading Json: {json_path}')
     with open(json_path, 'r') as json_file:
         return json.load(json_file)
 # ----------------------------------------------------------------------------------------------------------------------------------
 
+def save_edge_data_json_file(edge_data, json_path):
+    log.info(f'save Json: {json_path}')
+    with open(json_path, 'w') as json_file:
+        return json.dump(edge_data, json_file)
+# ----------------------------------------------------------------------------------------------------------------------------------
 
 def main(args=None):
     # parse arguments
@@ -64,11 +68,13 @@ def main(args=None):
     try:
         save_split_images = ''
         edge_data = edge_client.get_edge_data(app_token)
+        json_path = f'/opt/eyeflow/edge_data.json'
         if not edge_data:
-            json_path = f'/opt/eyeflow/src/edge_data.json'
             edge_data = load_edge_data_json_file(json_path)
             if not edge_data:
                 raise Exception("Fail getting edge_data")
+        else:
+            save_edge_data_json_file(edge_data, json_path)
 
         log.info(edge_data)
         flow_id = edge_data["flow_id"]
