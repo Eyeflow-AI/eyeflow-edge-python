@@ -102,7 +102,7 @@ sudo -H pip3 install --upgrade --no-cache-dir --trusted-host pypi.python.org eye
 
 ## Install TensorFlow using the pip3 command. This command will install TensorFlow from NVidia.
 ```
-sudo pip3 install --pre --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v44 tensorflow==2.2.0
+sudo pip3 install --pre --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v46 tensorflow==2.6.2
 ```
 
 ## Create eyeflow directory
