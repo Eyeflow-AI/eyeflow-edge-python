@@ -25,7 +25,7 @@ import utils
 def get_dataset_folder(dataset):
     dataset_folder = os.path.join(CONFIG["file-service"]["extract"]["local_folder"], dataset)
     if os.path.isdir(dataset_folder):
-        return dataset_folder
+        return dataset_folder, dataset
 
     for dset in os.listdir(CONFIG["file-service"]["model"]["local_folder"]):
         dataset_folder = os.path.join(CONFIG["file-service"]["model"]["local_folder"], dset)
@@ -36,7 +36,7 @@ def get_dataset_folder(dataset):
             if dset_data["name"] == dataset or dset_data["info"]["long_name"] == dataset:
                 dataset_folder = os.path.join(CONFIG["file-service"]["extract"]["local_folder"], dset_data["_id"])
                 if os.path.isdir(dataset_folder):
-                    return dataset_folder
+                    return dataset_folder, dset_data["_id"]
 
     raise Exception(f"Dataset not found: {dataset}")
 #----------------------------------------------------------------------------------------------------------------------------------
@@ -62,11 +62,11 @@ def main(args=None):
     utils.check_license(app_info)
 
     if args.dataset:
-        extract_path = get_dataset_folder(args.dataset)
+        extract_path, dataset_id = get_dataset_folder(args.dataset)
         files_uploaded = os.listdir(extract_path)
         if not edge_client.upload_extract(
             app_token,
-            args.dataset,
+            dataset_id,
             extract_folder=CONFIG["file-service"]["extract"]["local_folder"],
             max_files=800,
             thumb_size=128
