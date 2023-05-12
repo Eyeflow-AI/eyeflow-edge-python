@@ -12,6 +12,7 @@ import argparse
 import json
 import utils
 import flow_run
+import time
 
 import tensorflow as tf
 
@@ -30,6 +31,7 @@ def parse_args(args):
     parser.add_argument('--video', help='Record image of detection in a video.', action='store_true')
     parser.add_argument('--save_split_imgs', help='Path to save split images of detections to a folder.', type=str)
     parser.add_argument('--save_img', help='Save concatenated image of detections to a folder.', type=str)
+    parser.add_argument('--serve_image_port', help='Serve image of detections to a port.', type=int)
 
     return parser.parse_args(args)
 # ----------------------------------------------------------------------------------------------------------------------------------
@@ -79,22 +81,28 @@ def main(args=None):
         log.info(edge_data)
         flow_id = edge_data["flow_id"]
 
-        out_monitor = []
+        out_monitor_single_image = []
+        out_monitor_multiple_images = []
+
         if args.monitor:
             mon = flow_run.MonitorShow(flow_id)
-            out_monitor.append(mon)
+            out_monitor_single_image.append(mon)
 
         if args.video:
             vid = flow_run.VideoSave(flow_id)
-            out_monitor.append(vid)
+            out_monitor_single_image.append(vid)
 
         if args.save_img:
             sav = flow_run.ImageSave(edge_data["flow_name"], args.save_img)
-            out_monitor.append(sav)
+            out_monitor_single_image.append(sav)
+
+        if args.serve_image_port:
+            serv = flow_run.ImageServ(flow_id, args.serve_image_port)
+            out_monitor_multiple_images.append(serv)
 
         if args.save_split_imgs:
-            save_split_images = args.save_split_imgs
-            # out_monitor.append(save_split_images)
+            save_split_images = flow_run.SaveSplitImage(flow_id, args.serve_image_port)
+            out_monitor_multiple_images.append(save_split_images)
 
         log.info(f"Runnig flow at edge - Flow ID: {flow_id}")
 
@@ -106,8 +114,8 @@ def main(args=None):
         utils.prepare_models(app_token, flow_data)
         utils.get_flow_components(app_token, flow_data)
 
-        flow_obj = flow_run.FlowRun(flow_id, flow_data, device_info=app_info["edge_id"], save_split_images=save_split_images)
-        flow_obj.process_flow(img_output=out_monitor, out_frame=(1530, 1020))
+        flow_obj = flow_run.FlowRun(flow_id, flow_data, device_info=app_info["edge_id"])
+        flow_obj.process_flow(img_output_single=out_monitor_single_image, image_output_multiple=out_monitor_multiple_images, out_frame=(1530, 1020))
 
         utils.upload_flow_extracts(app_token, flow_data)
 
