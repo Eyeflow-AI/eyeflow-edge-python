@@ -13,9 +13,13 @@ import math
 from pathlib import Path
 import copy
 import importlib
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import json
+from bson import ObjectId
+
 import numpy as np
 import cv2
-
 from eyeflow_sdk import img_utils
 from eyeflow_sdk.log_obj import log, CONFIG
 # ----------------------------------------------------------------------------------------------------------------------------------
@@ -86,6 +90,81 @@ class ImageSave():
             os.rename(img_file + "-tmp.jpg", img_file)
         except:
             pass
+
+# ----------------------------------------------------------------------------------------------------------------------------------
+images_data = {
+    "frames": {},
+    }
+  
+
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+
+    def do_GET(self):
+
+        # parsed_path = urlparse.urlparse(self.path)
+        path = self.path
+        query = ""
+        if "?" in path:
+            path, query = path.split("?")
+
+        camera_name_list = images_data["frames"].keys()
+        
+        if self.path == "/":
+            response = {"camera_list": []}
+            for camera_name in images_data["frames"]:
+                response["camera_list"].append({
+                    "name": camera_name,
+                    "frame_time": images_data["frames"][camera_name]["frame_time"],
+                })
+
+            self.send_header('Content-type', 'application/json')
+            self.write_response(json.dumps(response).encode('utf-8'))
+
+        if path in [f"/{i}" for i in camera_name_list]:
+            camera_name = path[1:]
+            frame = images_data["frames"][camera_name]["frame"]
+            self.send_header('Content-type', 'image/jpeg')
+            self.write_response(cv2.imencode('.jpg', frame)[1].tobytes())
+
+
+    def write_response(self, content, status=200):
+
+        self.send_response(status)
+        self.end_headers()
+        self.wfile.write(content)
+
+
+class ImageServ():
+    """
+    Classe que recebe as imagens de um flow e as serve em uma porta em outra thread
+    """
+    
+    def __init__(self, flow_id, port):
+
+        self._flow_id = flow_id
+        self._port = port
+        self._server = None
+        self._server_thread = threading.Thread(target=self._start_server)
+        self._server_thread.start()
+
+
+    def _start_server(self):
+
+        self._server = HTTPServer(('localhost', self._port), SimpleHTTPRequestHandler)
+        self._server.serve_forever()
+
+
+    def __call__(self, camera_name, image):
+
+        try:
+            images_data["frames"][camera_name] = {
+                "frame_time": datetime.datetime.now(),
+                "frame": image,
+                }
+
+        except:
+            pass
+
 # ----------------------------------------------------------------------------------------------------------------------------------
 
 class SaveSplitImage():
@@ -93,20 +172,18 @@ class SaveSplitImage():
     Classe que salva as imagens das cameras separadamente
     """
 
-    def __init__(self, dir, image_name, image):
+    def __init__(self, dir):
         save_path = Path(dir)
         if not save_path.is_dir():
             save_path.mkdir(parents=True, exist_ok=True)
 
-        self._image_name = image_name
         self._save_path = save_path
-        self._image = image
 
 
-    def __call__(self):
+    def __call__(self, image_name, image):
         try:
-            img_file = os.path.join(self._save_path, self._image_name)
-            cv2.imwrite(img_file + "-tmp.jpg", self._image)
+            img_file = os.path.join(self._save_path, image_name)
+            cv2.imwrite(img_file + "-tmp.jpg", image)
             if os.path.isfile(img_file):
                 os.remove(img_file)
 
@@ -269,10 +346,10 @@ class FlowRun():
         return [[p["output_data"] for p in cam[0]] for cam in inputs]
 
 
-    def process_flow(self, img_output=[], out_frame=(1530, 1020)):
+    def process_flow(self, img_output_single=[], image_output_multiple=[], out_frame=(1530, 1020)):
         key_press = 0
 
-        if img_output:
+        if img_output_single or image_output_multiple:
             import flow_draw
 
             size_w = int(math.ceil(math.sqrt(len(self._components["input"]))))
@@ -305,26 +382,17 @@ class FlowRun():
 
                 self.process_frames(frames_cams)
 
-                # Split images for monitor===========================================================================
-                if self._save_split_images:
+                if image_output_multiple:
                     now = datetime.datetime.now()
-                    success_list = []
                     for frames in frames_cams:
-                        if (now - self._last_original_image_time).total_seconds() > self._update_monitor_images_time:
-                            input_image = frames[0][0]['input_image']
-                            camera_name = frames[0][0]['frame_data']['camera_name']
-                            # /opt/eyeflow/data/monitor
-                            success = SaveSplitImage(self._save_split_images, f'{camera_name}.jpg', input_image)
-                            success()
-                            success_list.append(success)
+                        for out_obj in image_output_multiple:
+                            if (now - self._last_original_image_time).total_seconds() > self._update_monitor_images_time:
+                                camera_name = frames[0][0]['frame_data']['camera_name']
+                                input_image = frames[0][0]['input_image']
+                                out_obj(camera_name, input_image)
+                        self._last_original_image_time = now
 
-                    if len(success_list) > 0:
-                        if all(success_list):
-                            self._last_original_image_time = now
-                        else:
-                            log.error('Failed to save monitor images')
-
-                if img_output:
+                if img_output_single:
                     frames_draw = []
                     for frames in frames_cams:
                         frames_draw.append(draw_obj.draw_frames(frames[0]))
@@ -333,7 +401,7 @@ class FlowRun():
                         frs = [np.array(fr[frame]) for fr in frames_draw]
                         frs = img_utils.merge_images(frs).astype(np.uint8)
 
-                        for out_obj in img_output:
+                        for out_obj in img_output_single:
                             out_obj(frs)
 
                         key_press = cv2.waitKey(1)
