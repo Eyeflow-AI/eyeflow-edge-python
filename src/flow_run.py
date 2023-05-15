@@ -109,7 +109,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         camera_name_list = images_data["frames"].keys()
         
-        if self.path == "/":
+        if self.path == "/cameras":
             response = {"ok": True, "cameras_list": []}
             for camera_name in images_data["frames"]:
                 response["cameras_list"].append({
@@ -120,8 +120,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header('Content-type', 'application/json')
             self.write_response(json.dumps(response).encode('utf-8'))
 
-        if path in [f"/{i}" for i in camera_name_list]:
-            camera_name = path[1:]
+        if path in [f"/cameras/{i}" for i in camera_name_list]:
+            camera_name = f"/cameras/{path.replace('/cameras/', '')}"
             frame = images_data["frames"][camera_name]["frame"]
             self.send_header('Content-type', 'image/jpeg')
             self.write_response(cv2.imencode('.jpg', frame)[1].tobytes())
