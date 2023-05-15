@@ -110,9 +110,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         camera_name_list = images_data["frames"].keys()
         
         if self.path == "/":
-            response = {"camera_list": []}
+            response = {"ok": True, "cameras_list": []}
             for camera_name in images_data["frames"]:
-                response["camera_list"].append({
+                response["cameras_list"].append({
                     "name": camera_name,
                     "frame_time": images_data["frames"][camera_name]["frame_time"],
                 })
