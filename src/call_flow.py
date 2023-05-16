@@ -12,7 +12,6 @@ import argparse
 import json
 import utils
 import flow_run
-import time
 
 import tensorflow as tf
 
