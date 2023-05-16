@@ -31,7 +31,8 @@ def parse_args(args):
     parser.add_argument('--video', help='Record image of detection in a video.', action='store_true')
     parser.add_argument('--save_split_imgs', help='Path to save split images of detections to a folder.', type=str)
     parser.add_argument('--save_img', help='Save concatenated image of detections to a folder.', type=str)
-    parser.add_argument('--serve_image_port', help='Serve image of detections to a port.', type=int)
+    parser.add_argument('--serve_image_host', help='Serve image host name.', default="localhost", type=str)
+    parser.add_argument('--serve_image_port', help='Serve image host port', type=int)
 
     return parser.parse_args(args)
 # ----------------------------------------------------------------------------------------------------------------------------------
@@ -96,8 +97,8 @@ def main(args=None):
             sav = flow_run.ImageSave(edge_data["flow_name"], args.save_img)
             out_monitor_single_image.append(sav)
 
-        if args.serve_image_port:
-            serv = flow_run.ImageServ(flow_id, args.serve_image_port)
+        if args.serve_image_host and args.serve_image_port:
+            serv = flow_run.ImageServ(flow_id, args.serve_image_host, args.serve_image_port)
             out_monitor_multiple_images.append(serv)
 
         if args.save_split_imgs:
