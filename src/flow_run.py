@@ -5,6 +5,7 @@ Class to interpret and execute a Flow
 Author: Alex Sobral de Freitas
 """
 
+import io
 import os
 import sys
 import traceback
@@ -99,17 +100,22 @@ images_data = {
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
+
     def do_GET(self):
 
-        # parsed_path = urlparse.urlparse(self.path)
         path = self.path
         query = ""
         if "?" in path:
             path, query = path.split("?")
 
         camera_name_list = images_data["frames"].keys()
-        
-        if self.path == "/cameras":
+
+        if not self.path  or self.path == "/":
+
+            self.send_json({"ok": True, "message": "Eyeflow Image Server"})
+
+
+        elif self.path == "/cameras":
             response = {"ok": True, "cameras_list": []}
             for camera_name in images_data["frames"]:
                 response["cameras_list"].append({
@@ -117,21 +123,55 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     "frame_time": images_data["frames"][camera_name]["frame_time"],
                 })
 
-            self.send_header('Content-type', 'application/json')
-            self.write_response(json.dumps(response).encode('utf-8'))
-
-        if path in [f"/cameras/{i}" for i in camera_name_list]:
-            camera_name = f"/cameras/{path.replace('/cameras/', '')}"
-            frame = images_data["frames"][camera_name]["frame"]
-            self.send_header('Content-type', 'image/jpeg')
-            self.write_response(cv2.imencode('.jpg', frame)[1].tobytes())
+            self.send_json(response)
 
 
-    def write_response(self, content, status=200):
+        elif path in [f"/cameras/{i}" for i in camera_name_list]:
 
+            camera_name = path.replace('/cameras/', '')
+            self.send_pillow_image(images_data["frames"][camera_name]["frame"])
+
+        else:
+            response = {"ok": False, "error": "Page not Found"}
+            self.send_json(response, status=404)
+
+
+    def send_json(self, data, status=200):
+
+        response = bytes(json.dumps(data, default=str), "utf-8")
+        self.protocol_version = 'HTTP/1.0'
         self.send_response(status)
+        self.send_header("Content-type", 'application/json')
+        self.send_header("Content-length", len(response))
         self.end_headers()
-        self.wfile.write(content)
+        self.wfile.write(response)
+
+
+    def send_cv2_image(self, cv2_image, status=200):
+
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+        result, response = cv2.imencode('.jpg', cv2_image, encode_param)
+
+        self.protocol_version = 'HTTP/1.0'
+        self.send_response(status)
+        self.send_header('Content-type', 'image/jpeg')
+        self.send_header("Content-length", len(response))
+        self.end_headers()
+        self.wfile.write(response)
+
+
+    def send_pillow_image(self, pillow_image, status=200):
+
+        response = io.BytesIO()
+        pillow_image.save(response, format="JPEG")
+        response = response.getvalue()
+
+        self.protocol_version = 'HTTP/1.0'
+        self.send_response(status)
+        self.send_header('Content-type', 'image/jpeg')
+        self.send_header("Content-length", len(response))
+        self.end_headers()
+        self.wfile.write(response)
 
 
 class ImageServ():
@@ -139,9 +179,10 @@ class ImageServ():
     Classe que recebe as imagens de um flow e as serve em uma porta em outra thread
     """
     
-    def __init__(self, flow_id, port):
+    def __init__(self, flow_id, host, port):
 
         self._flow_id = flow_id
+        self._host = host
         self._port = port
         self._server = None
         self._server_thread = threading.Thread(target=self._start_server)
@@ -150,7 +191,8 @@ class ImageServ():
 
     def _start_server(self):
 
-        self._server = HTTPServer(('localhost', self._port), SimpleHTTPRequestHandler)
+        log.info(f"Starting Image Server on port {self._host}:{self._port}")
+        self._server = HTTPServer((self._host, self._port), SimpleHTTPRequestHandler)
         self._server.serve_forever()
 
 
@@ -212,9 +254,6 @@ class FlowRun():
         self._components["input_agregation"] = []
         self.load_components()
         self.load_models()
-        self._update_monitor_images_time = 0.5
-        self._last_original_image_time = datetime.datetime.now()
-        self._last_annotated_image_time = datetime.datetime.now()
 
 
     def load_components(self):
@@ -382,34 +421,32 @@ class FlowRun():
 
                 self.process_frames(frames_cams)
 
-                if image_output_multiple:
-                    now = datetime.datetime.now()
-                    for frames in frames_cams:
-                        for out_obj in image_output_multiple:
-                            if (now - self._last_original_image_time).total_seconds() > self._update_monitor_images_time:
-                                camera_name = frames[0][0]['frame_data']['camera_name']
-                                input_image = frames[0][0]['input_image']
-                                out_obj(camera_name, input_image)
-                        self._last_original_image_time = now
-
-                if img_output_single:
+                if img_output_single or image_output_multiple:
                     frames_draw = []
                     for frames in frames_cams:
                         frames_draw.append(draw_obj.draw_frames(frames[0]))
 
-                    for frame in range(num_frames):
-                        frs = [np.array(fr[frame]) for fr in frames_draw]
-                        frs = img_utils.merge_images(frs).astype(np.uint8)
+                    if img_output_single:
+                        for frame in range(num_frames):
+                            frs = [np.array(fr[frame]) for fr in frames_draw]
+                            frs = img_utils.merge_images(frs).astype(np.uint8)
 
-                        for out_obj in img_output_single:
-                            out_obj(frs)
+                            for out_obj in img_output_single:
+                                out_obj(frs)
 
-                        key_press = cv2.waitKey(1)
-                        if key_press & 0xFF == ord('q'):
-                            break
+                            key_press = cv2.waitKey(1)
+                            if key_press & 0xFF == ord('q'):
+                                break
 
-                        if key_press & 0xFF == ord(' '):
-                            key_event = True
+                            if key_press & 0xFF == ord(' '):
+                                key_event = True
+
+                    if image_output_multiple:
+                        for index in range(len(frames_cams)):
+                            for out_obj in image_output_multiple:
+                                camera_name = frames_cams[index][0][0]['frame_data']['camera_name']
+                                # input_image = frames_cams[index][0][0]['input_image']
+                                out_obj(camera_name, frames_draw[index][0])
 
                 if key_press & 0xFF == ord('q'):
                     break
