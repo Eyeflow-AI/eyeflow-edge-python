@@ -103,37 +103,48 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
 
-        path = self.path
-        query = ""
-        if "?" in path:
-            path, query = path.split("?")
+        try:
+            path = self.path
+            query = ""
+            if "?" in path:
+                path, query = path.split("?")
 
-        camera_name_list = images_data["frames"].keys()
+            if path.endswith("/"):
+                path = path[:-1]
 
-        if not self.path  or self.path == "/":
+            camera_name_list = images_data["frames"].keys()
 
-            self.send_json({"ok": True, "message": "Eyeflow Image Server"})
+            if not self.path  or self.path == "/":
 
-
-        elif self.path == "/cameras":
-            response = {"ok": True, "cameras_list": []}
-            for camera_name in images_data["frames"]:
-                response["cameras_list"].append({
-                    "name": camera_name,
-                    "frame_time": images_data["frames"][camera_name]["frame_time"],
-                })
-
-            self.send_json(response)
+                self.send_json({"ok": True, "message": "Eyeflow Image Server"})
 
 
-        elif path in [f"/cameras/{i}" for i in camera_name_list]:
+            elif self.path == "/cameras":
+                response = {"ok": True, "cameras_list": []}
+                for camera_name in images_data["frames"]:
+                    response["cameras_list"].append({
+                        "name": camera_name,
+                        "frame_time": images_data["frames"][camera_name]["frame_time"],
+                        "url_path": f"/cameras/{camera_name}",
+                    })
 
-            camera_name = path.replace('/cameras/', '')
-            self.send_pillow_image(images_data["frames"][camera_name]["frame"])
+                self.send_json(response)
 
-        else:
-            response = {"ok": False, "error": "Page not Found"}
-            self.send_json(response, status=404)
+
+            elif path in [f"/cameras/{i}" for i in camera_name_list]:
+
+                camera_name = path.replace('/cameras/', '')
+                self.send_cv2_image(images_data["frames"][camera_name]["frame"])
+
+            else:
+                response = {"ok": False, "error": "Page not Found"}
+                self.send_json(response, status=404)
+
+
+        except Exception as e:
+
+            response = {"ok": False, "error": str(e)}
+            self.send_json(response, status=500)
 
 
     def send_json(self, data, status=200):
@@ -162,16 +173,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def send_pillow_image(self, pillow_image, status=200):
 
-        response = io.BytesIO()
-        pillow_image.save(response, format="JPEG")
-        response = response.getvalue()
-
-        self.protocol_version = 'HTTP/1.0'
-        self.send_response(status)
-        self.send_header('Content-type', 'image/jpeg')
-        self.send_header("Content-length", len(response))
-        self.end_headers()
-        self.wfile.write(response)
+        self.send_cv2_image(
+            cv2.cvtColor(np.array(pillow_image), cv2.COLOR_RGB2BGR),
+            status
+            )
 
 
 class ImageServ():
@@ -424,29 +429,23 @@ class FlowRun():
                 if img_output_single or image_output_multiple:
                     frames_draw = []
                     for frames in frames_cams:
-                        frames_draw.append(draw_obj.draw_frames(frames[0]))
+                        frame_draw = np.array(
+                            draw_obj.draw_frames(frames[0])[0]
+                            )
+                        frames_draw.append(frame_draw)
+                        for out_obj in image_output_multiple:
+                            out_obj(frames[0][0]["frame_data"]["camera_name"], frame_draw)
 
                     if img_output_single:
-                        for frame in range(num_frames):
-                            frs = [np.array(fr[frame]) for fr in frames_draw]
-                            frs = img_utils.merge_images(frs).astype(np.uint8)
+                        merged_image = img_utils.merge_images(frames_draw).astype(np.uint8)
+                        for out_obj in img_output_single:
+                            out_obj(merged_image)
 
-                            for out_obj in img_output_single:
-                                out_obj(frs)
-
-                            key_press = cv2.waitKey(1)
-                            if key_press & 0xFF == ord('q'):
-                                break
-
-                            if key_press & 0xFF == ord(' '):
-                                key_event = True
-
-                    if image_output_multiple:
-                        for index in range(len(frames_cams)):
-                            for out_obj in image_output_multiple:
-                                camera_name = frames_cams[index][0][0]['frame_data']['camera_name']
-                                # input_image = frames_cams[index][0][0]['input_image']
-                                out_obj(camera_name, frames_draw[index][0])
+                    key_press = cv2.waitKey(1)
+                    if key_press & 0xFF == ord('q'):
+                        break
+                    elif key_press & 0xFF == ord(' '):
+                        key_event = True
 
                 if key_press & 0xFF == ord('q'):
                     break
