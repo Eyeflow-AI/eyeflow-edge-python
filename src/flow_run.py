@@ -5,7 +5,6 @@ Class to interpret and execute a Flow
 Author: Alex Sobral de Freitas
 """
 
-import io
 import os
 import sys
 import traceback
@@ -123,7 +122,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 response = {"ok": True, "cameras_list": []}
                 for camera_name in images_data["frames"]:
                     response["cameras_list"].append({
-                        "name": camera_name,
+                        "camera_name": camera_name,
                         "frame_time": images_data["frames"][camera_name]["frame_time"],
                         "url_path": f"/cameras/{camera_name}",
                     })
@@ -154,6 +153,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-type", 'application/json')
         self.send_header("Content-length", len(response))
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
         self.wfile.write(response)
 
@@ -167,6 +167,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header('Content-type', 'image/jpeg')
         self.send_header("Content-length", len(response))
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
         self.wfile.write(response)
 
