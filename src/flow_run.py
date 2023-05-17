@@ -6,6 +6,7 @@ Author: Alex Sobral de Freitas
 """
 
 import os
+import re
 import sys
 import traceback
 import datetime
@@ -108,6 +109,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             if "?" in path:
                 path, query = path.split("?")
 
+            path = re.sub('/+', '/', path)
             if path.endswith("/"):
                 path = path[:-1]
 
