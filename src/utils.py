@@ -182,6 +182,9 @@ def get_device_sn(OS='Linux'):
         if OS == 'Windows':
             cmd = 'wmic bios get serialnumber'
             return os.popen(cmd).read().replace("\n","").replace("	","").replace(" ","")
+        elif OS == 'macOS':
+            cmd = "system_profiler SPHardwareDataType | grep Serial | awk '{ print $NF }'"
+            return os.popen(cmd).read().replace("\n","")
         else:
             filename = "/sys/class/dmi/id/product_uuid"
             if os.path.isfile(filename):
@@ -196,7 +199,7 @@ def get_device_sn(OS='Linux'):
 
 def get_device_info():
     plat_info = platform.platform().split('-')
-    if plat_info[0] not in ["Linux", "Windows"]:
+    if plat_info[0] not in ["Linux", "Windows", "macOS"]:
         raise Exception(f"Invalid platform: {plat_info[0]}")
 
     if "aarch64" in plat_info:
@@ -212,6 +215,10 @@ def get_device_info():
         #Ex: Windows-10-10.0.22000-SP0
         device_arch = plat_info
         device_sn = get_device_sn(OS="Windows")
+    elif "macOS" in plat_info:
+        #Ex: macOS-11.5.2-x86_64-i386-64bit
+        device_arch = plat_info
+        device_sn = get_device_sn(OS="macOS")
     else:
         raise Exception(f"Invalid device_architecture: {'-'.join(plat_info)}")
 
