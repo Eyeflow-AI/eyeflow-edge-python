@@ -28,15 +28,24 @@ class FlowDraw(object):
         ini_size = 8
 
         try:
-            font_name = 'DejaVuSansMono.ttf'
-            self._draw_font = ImageFont.truetype(font_name, ini_size)
-            self._txt_size = draw_obj.textsize(display_txt, font=self._draw_font)
-            while self._txt_size[1] < end_size:
-                ini_size += 1
+            try:
+                font_name = 'DejaVuSansMono.ttf'
                 self._draw_font = ImageFont.truetype(font_name, ini_size)
                 self._txt_size = draw_obj.textsize(display_txt, font=self._draw_font)
+                while self._txt_size[1] < end_size:
+                    ini_size += 1
+                    self._draw_font = ImageFont.truetype(font_name, ini_size)
+                    self._txt_size = draw_obj.textsize(display_txt, font=self._draw_font)
+            except:
+                font_name = 'arial.ttf'
+                self._draw_font = ImageFont.truetype(font_name, ini_size)
+                self._txt_size = draw_obj.textsize(display_txt, font=self._draw_font)
+                while self._txt_size[1] < end_size:
+                    ini_size += 1
+                    self._draw_font = ImageFont.truetype(font_name, ini_size)
+                    self._txt_size = draw_obj.textsize(display_txt, font=self._draw_font)
         except:
-            font_name = 'arial.ttf'
+            font_name = 'Keyboard.ttf'
             self._draw_font = ImageFont.truetype(font_name, ini_size)
             self._txt_size = draw_obj.textsize(display_txt, font=self._draw_font)
             while self._txt_size[1] < end_size:
